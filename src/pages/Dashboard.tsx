@@ -128,7 +128,10 @@ const Dashboard = () => {
           <div className="glass-card p-4 sm:p-6">
             <h2 className="text-base sm:text-lg font-semibold text-foreground mb-4 sm:mb-6">Quick Actions</h2>
             <div className="space-y-2 sm:space-y-3">
-              <button className="w-full flex items-center gap-3 p-2.5 sm:p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-left">
+              <button 
+                onClick={() => navigate('/dashboard/campaigns')}
+                className="w-full flex items-center gap-3 p-2.5 sm:p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-left"
+              >
                 <div className="p-1.5 sm:p-2 bg-primary/10 rounded-lg flex-shrink-0">
                   <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 </div>
@@ -137,7 +140,10 @@ const Dashboard = () => {
                   <p className="text-[10px] sm:text-xs text-muted-foreground">Reach your audience</p>
                 </div>
               </button>
-              <button className="w-full flex items-center gap-3 p-2.5 sm:p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-left">
+              <button 
+                onClick={() => navigate('/dashboard/ai-agents')}
+                className="w-full flex items-center gap-3 p-2.5 sm:p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-left"
+              >
                 <div className="p-1.5 sm:p-2 bg-emerald-500/10 rounded-lg flex-shrink-0">
                   <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-500" />
                 </div>
@@ -146,7 +152,10 @@ const Dashboard = () => {
                   <p className="text-[10px] sm:text-xs text-muted-foreground">Automate responses</p>
                 </div>
               </button>
-              <button className="w-full flex items-center gap-3 p-2.5 sm:p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-left">
+              <button 
+                onClick={() => navigate('/dashboard/contacts')}
+                className="w-full flex items-center gap-3 p-2.5 sm:p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-left"
+              >
                 <div className="p-1.5 sm:p-2 bg-blue-500/10 rounded-lg flex-shrink-0">
                   <Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
                 </div>
