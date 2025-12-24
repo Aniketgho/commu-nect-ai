@@ -185,7 +185,7 @@ const PhoneNumbers = () => {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {phoneNumbers.map((phone) => (
-              <Card key={phone.id} className="relative overflow-hidden">
+              <Card key={phone.id} className="relative overflow-hidden pl-3">
                 <div
                   className={`absolute top-0 left-0 w-1 h-full ${
                     phone.status === "active"
@@ -195,21 +195,21 @@ const PhoneNumbers = () => {
                       : "bg-muted-foreground"
                   }`}
                 />
-                <CardHeader className="pb-3 pl-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1 min-w-0 flex-1">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-primary flex-shrink-0" />
-                        <span className="truncate">{phone.phone_number}</span>
-                      </CardTitle>
-                      <CardDescription className="truncate">{phone.label}</CardDescription>
-                    </div>
-                    <div className="flex-shrink-0">
+                <CardHeader className="pb-3">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className="text-xs">
+                        {phone.label}
+                      </Badge>
                       {getStatusBadge(phone.status)}
                     </div>
+                    <CardTitle className="text-xl flex items-center gap-2">
+                      <Phone className="h-5 w-5 text-primary flex-shrink-0" />
+                      <span>{phone.phone_number}</span>
+                    </CardTitle>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4 pl-5">
+                <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
                       <p className="text-muted-foreground">Country</p>
