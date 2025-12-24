@@ -143,12 +143,12 @@ export function AddPhoneDialog({ open, onOpenChange, onAdd }: AddPhoneDialogProp
                       <ChevronDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[280px] p-0 z-50 bg-popover" align="start">
+                  <PopoverContent className="w-[280px] p-0 z-50 bg-popover pointer-events-auto" align="start">
                     <Command>
                       <CommandInput placeholder="Search country..." />
-                      <CommandList>
+                      <CommandList className="max-h-[300px] overflow-y-auto">
                         <CommandEmpty>No country found.</CommandEmpty>
-                        <CommandGroup className="max-h-[300px] overflow-auto">
+                        <CommandGroup>
                           {countries.map((country) => (
                             <CommandItem
                               key={country.code}
