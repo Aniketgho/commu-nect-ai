@@ -57,6 +57,8 @@ const PhoneNumbers = () => {
   const [editLabel, setEditLabel] = useState("");
   const [editPhoneNumber, setEditPhoneNumber] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
+  const [verificationError, setVerificationError] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
   const handleEdit = (phone: PhoneNumber) => {
@@ -74,7 +76,15 @@ const PhoneNumbers = () => {
   const handleVerify = (phone: PhoneNumber) => {
     setSelectedPhone(phone);
     setVerificationCode("");
+    setVerificationError("");
+    setCodeSent(false);
     setVerifyDialogOpen(true);
+  };
+
+  const sendVerificationCode = () => {
+    setCodeSent(true);
+    // In production, this would call an SMS API
+    // For demo, we're using a mock code: 123456
   };
 
   const confirmEdit = async () => {
@@ -108,8 +118,16 @@ const PhoneNumbers = () => {
 
   const confirmVerify = async () => {
     if (!selectedPhone) return;
-    // In a real implementation, you would verify the code with WhatsApp API
-    // For now, we'll just mark it as verified
+    
+    // Mock verification - in production, verify with SMS provider
+    const TEST_CODE = "123456";
+    
+    if (verificationCode !== TEST_CODE) {
+      setVerificationError("Invalid verification code. Please try again.");
+      return;
+    }
+    
+    setVerificationError("");
     setActionLoading(true);
     try {
       await verifyPhoneNumber(selectedPhone.id);
@@ -421,26 +439,66 @@ const PhoneNumbers = () => {
               Verify Phone Number
             </DialogTitle>
             <DialogDescription>
-              Enter the verification code sent to {selectedPhone?.phone_number} via SMS.
+              {codeSent 
+                ? `Enter the verification code sent to ${selectedPhone?.phone_number} via SMS.`
+                : `We'll send a verification code to ${selectedPhone?.phone_number}`
+              }
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="verification-code">Verification Code</Label>
-              <Input
-                id="verification-code"
-                value={verificationCode}
-                onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder="Enter 6-digit code"
-                className="text-center text-2xl tracking-widest"
-                maxLength={6}
-                disabled={actionLoading}
-              />
-              <p className="text-xs text-muted-foreground text-center">
-                Didn't receive a code?{" "}
-                <button className="text-primary hover:underline">Resend SMS</button>
-              </p>
-            </div>
+            {!codeSent ? (
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                  <Phone className="h-8 w-8 text-primary" />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Click the button below to receive a verification code via SMS.
+                </p>
+                <Button onClick={sendVerificationCode} className="w-full">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Send Verification Code
+                </Button>
+                <div className="p-3 bg-muted/50 rounded-lg border border-border/50">
+                  <p className="text-xs text-muted-foreground">
+                    <strong>Demo Mode:</strong> Use code <code className="bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono">123456</code> to verify.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                <Label htmlFor="verification-code">Verification Code</Label>
+                <Input
+                  id="verification-code"
+                  value={verificationCode}
+                  onChange={(e) => {
+                    setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+                    setVerificationError("");
+                  }}
+                  placeholder="Enter 6-digit code"
+                  className={`text-center text-2xl tracking-widest ${verificationError ? 'border-destructive' : ''}`}
+                  maxLength={6}
+                  disabled={actionLoading}
+                />
+                {verificationError && (
+                  <p className="text-sm text-destructive text-center">{verificationError}</p>
+                )}
+                <p className="text-xs text-muted-foreground text-center">
+                  Didn't receive a code?{" "}
+                  <button 
+                    type="button"
+                    onClick={sendVerificationCode}
+                    className="text-primary hover:underline"
+                  >
+                    Resend SMS
+                  </button>
+                </p>
+                <div className="p-3 bg-muted/50 rounded-lg border border-border/50">
+                  <p className="text-xs text-muted-foreground">
+                    <strong>Demo Mode:</strong> Use code <code className="bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono">123456</code> to verify.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button
@@ -450,16 +508,21 @@ const PhoneNumbers = () => {
             >
               Cancel
             </Button>
-            <Button onClick={confirmVerify} disabled={actionLoading}>
-              {actionLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Verifying...
-                </>
-              ) : (
-                "Verify Number"
-              )}
-            </Button>
+            {codeSent && (
+              <Button 
+                onClick={confirmVerify} 
+                disabled={actionLoading || verificationCode.length !== 6}
+              >
+                {actionLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Verifying...
+                  </>
+                ) : (
+                  "Verify Number"
+                )}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
