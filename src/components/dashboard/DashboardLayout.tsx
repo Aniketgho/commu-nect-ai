@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/hooks/useTheme";
 import { toast } from "sonner";
 import {
   MessageSquare,
@@ -56,6 +57,11 @@ const DashboardLayout = ({ children, panelType = "user" }: DashboardLayoutProps)
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { resolvedTheme, setTheme } = useTheme();
+  
+  const toggleTheme = () => {
+    setTheme(resolvedTheme === "dark" ? "light" : "dark");
+  };
   
   const {
     phoneNumbers,
@@ -327,8 +333,16 @@ const DashboardLayout = ({ children, panelType = "user" }: DashboardLayoutProps)
               <Bell className="h-5 w-5" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
             </button>
-            <button className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors hidden sm:block">
-              <Sun className="h-5 w-5" />
+            <button 
+              onClick={toggleTheme}
+              className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors hidden sm:block"
+              aria-label="Toggle theme"
+            >
+              {resolvedTheme === "dark" ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
             </button>
             <div className="flex items-center gap-2 lg:gap-3 pl-2 lg:pl-4 border-l border-border">
               <div className="text-right hidden sm:block">
