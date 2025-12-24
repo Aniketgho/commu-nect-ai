@@ -185,76 +185,100 @@ const PhoneNumbers = () => {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {phoneNumbers.map((phone) => (
-              <Card key={phone.id} className="relative overflow-hidden pl-3">
+              <Card 
+                key={phone.id} 
+                className="group relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
+              >
+                {/* Status indicator line */}
                 <div
-                  className={`absolute top-0 left-0 w-1 h-full ${
+                  className={`absolute top-0 left-0 right-0 h-1 ${
                     phone.status === "active"
-                      ? "bg-green-500"
+                      ? "bg-gradient-to-r from-green-500 to-emerald-400"
                       : phone.status === "pending"
-                      ? "bg-yellow-500"
+                      ? "bg-gradient-to-r from-yellow-500 to-amber-400"
                       : "bg-muted-foreground"
                   }`}
                 />
-                <CardHeader className="pb-3">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <Badge variant="outline" className="text-xs">
-                        {phone.label}
-                      </Badge>
-                      {getStatusBadge(phone.status)}
-                    </div>
-                    <CardTitle className="text-xl flex items-center gap-2">
-                      <Phone className="h-5 w-5 text-primary flex-shrink-0" />
-                      <span>{phone.phone_number}</span>
-                    </CardTitle>
+                
+                <CardHeader className="pb-2 pt-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <Badge 
+                      variant="outline" 
+                      className="text-xs font-medium bg-background/50"
+                    >
+                      {phone.label}
+                    </Badge>
+                    {getStatusBadge(phone.status)}
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Country</p>
-                      <p className="font-medium">{phone.country_code || "N/A"}</p>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                      phone.status === "active" 
+                        ? "bg-green-500/10" 
+                        : phone.status === "pending"
+                        ? "bg-yellow-500/10"
+                        : "bg-muted"
+                    }`}>
+                      <Phone className={`h-6 w-6 ${
+                        phone.status === "active" 
+                          ? "text-green-500" 
+                          : phone.status === "pending"
+                          ? "text-yellow-500"
+                          : "text-muted-foreground"
+                      }`} />
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Added</p>
-                      <p className="font-medium">
-                        {format(new Date(phone.created_at), "MMM d, yyyy")}
+                      <CardTitle className="text-lg font-semibold">
+                        {phone.phone_number}
+                      </CardTitle>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {phone.country_code ? `Country: ${phone.country_code}` : "No country set"}
                       </p>
                     </div>
                   </div>
+                </CardHeader>
+                
+                <CardContent className="space-y-4 pt-2">
+                  <div className="flex items-center justify-between text-sm px-3 py-2 rounded-lg bg-muted/50">
+                    <span className="text-muted-foreground">Added</span>
+                    <span className="font-medium">
+                      {format(new Date(phone.created_at), "MMM d, yyyy")}
+                    </span>
+                  </div>
 
                   {phone.verified_at && (
-                    <div className="flex items-center gap-2 text-sm text-green-500">
+                    <div className="flex items-center gap-2 text-sm text-green-500 px-3 py-2 rounded-lg bg-green-500/10">
                       <Shield className="h-4 w-4" />
-                      Verified on {format(new Date(phone.verified_at), "MMM d, yyyy")}
+                      <span>Verified on {format(new Date(phone.verified_at), "MMM d, yyyy")}</span>
                     </div>
                   )}
 
+                  {/* Action buttons */}
                   <div className="flex gap-2 pt-2">
                     {phone.status === "pending" && (
                       <Button
                         size="sm"
                         onClick={() => handleVerify(phone)}
-                        className="flex-1"
+                        className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                       >
-                        <Shield className="h-4 w-4 mr-1" />
-                        Verify
+                        <Shield className="h-4 w-4 mr-2" />
+                        Verify Now
                       </Button>
                     )}
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => handleEdit(phone)}
-                      className={phone.status !== "pending" ? "flex-1" : ""}
+                      className={`${phone.status !== "pending" ? "flex-1" : ""} hover:bg-muted`}
                     >
-                      <Pencil className="h-4 w-4 mr-1" />
+                      <Pencil className="h-4 w-4 mr-2" />
                       Edit
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => handleDelete(phone)}
-                      className="text-destructive hover:text-destructive"
+                      className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
