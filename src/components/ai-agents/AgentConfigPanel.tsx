@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Save, Bot, Upload, Trash2, FileText, Link, Globe, User, ArrowLeft } from 'lucide-react';
+import { X, Save, Bot, Upload, Trash2, FileText, Link, Globe, User, ArrowLeft, Key, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 import { AIAgent, modelOptions, languageOptions, KnowledgeBaseItem } from '@/types/aiAgents';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,10 +20,48 @@ interface AgentConfigPanelProps {
 const AgentConfigPanel = ({ agent, onClose, onSave }: AgentConfigPanelProps) => {
   const [config, setConfig] = useState<AIAgent>(agent);
   const [activeTab, setActiveTab] = useState('general');
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState('');
 
   const handleSave = () => {
+    if (!config.apiConfig.isKeySet) {
+      toast.error('Please add your API key before saving');
+      setActiveTab('api');
+      return;
+    }
     onSave(config);
     toast.success('Agent configuration saved!');
+  };
+
+  const handleSaveApiKey = () => {
+    if (!apiKeyInput.trim()) {
+      toast.error('Please enter a valid API key');
+      return;
+    }
+    setConfig({
+      ...config,
+      apiConfig: {
+        ...config.apiConfig,
+        apiKey: apiKeyInput,
+        isKeySet: true,
+      },
+    });
+    setApiKeyInput('');
+    toast.success('API key saved securely!');
+  };
+
+  const handleModelChange = (model: AIAgent['model']) => {
+    const selectedModel = modelOptions.find((m) => m.value === model);
+    const provider = selectedModel?.provider as 'openai' | 'gemini' || 'openai';
+    setConfig({
+      ...config,
+      model,
+      apiConfig: {
+        ...config.apiConfig,
+        provider,
+        isKeySet: config.apiConfig.provider === provider ? config.apiConfig.isKeySet : false,
+      },
+    });
   };
 
   const handleAddKnowledge = (type: 'pdf' | 'url') => {
@@ -85,6 +123,16 @@ const AgentConfigPanel = ({ agent, onClose, onSave }: AgentConfigPanelProps) => 
               <TabsTrigger value="general" className="w-full justify-start px-3 py-2 data-[state=active]:bg-primary/10">
                 General Settings
               </TabsTrigger>
+              <TabsTrigger value="api" className="w-full justify-start px-3 py-2 data-[state=active]:bg-primary/10">
+                <div className="flex items-center justify-between w-full">
+                  <span>API Configuration</span>
+                  {config.apiConfig.isKeySet ? (
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-amber-400" />
+                  )}
+                </div>
+              </TabsTrigger>
               <TabsTrigger value="prompts" className="w-full justify-start px-3 py-2 data-[state=active]:bg-primary/10">
                 Prompts & Messages
               </TabsTrigger>
@@ -128,7 +176,7 @@ const AgentConfigPanel = ({ agent, onClose, onSave }: AgentConfigPanelProps) => 
                     <Label htmlFor="model">AI Model</Label>
                     <Select
                       value={config.model}
-                      onValueChange={(v) => setConfig({ ...config, model: v as AIAgent['model'] })}
+                      onValueChange={(v) => handleModelChange(v as AIAgent['model'])}
                     >
                       <SelectTrigger className="mt-1.5">
                         <SelectValue />
@@ -136,11 +184,17 @@ const AgentConfigPanel = ({ agent, onClose, onSave }: AgentConfigPanelProps) => 
                       <SelectContent>
                         {modelOptions.map((model) => (
                           <SelectItem key={model.value} value={model.value}>
-                            {model.label} - {model.description}
+                            <div className="flex items-center gap-2">
+                              <span>{model.label}</span>
+                              <span className="text-xs text-muted-foreground">({model.provider})</span>
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      Provider: <span className="capitalize font-medium text-foreground">{config.apiConfig.provider}</span>
+                    </p>
                   </div>
 
                   <div>
@@ -160,6 +214,117 @@ const AgentConfigPanel = ({ agent, onClose, onSave }: AgentConfigPanelProps) => 
                         </button>
                       ))}
                     </div>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* API Configuration */}
+            <TabsContent value="api" className="m-0 space-y-6 max-w-2xl">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground mb-4">API Configuration</h2>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Connect your own API keys to power this agent. Your keys are stored securely.
+                </p>
+
+                <div className="space-y-6">
+                  {/* Provider Info */}
+                  <div className="p-4 rounded-lg border border-border/50 bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${config.apiConfig.provider === 'openai' ? 'bg-emerald-500/20' : 'bg-blue-500/20'}`}>
+                          <Key className={`w-5 h-5 ${config.apiConfig.provider === 'openai' ? 'text-emerald-400' : 'text-blue-400'}`} />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground capitalize">{config.apiConfig.provider} API</p>
+                          <p className="text-sm text-muted-foreground">
+                            Required for {config.model}
+                          </p>
+                        </div>
+                      </div>
+                      {config.apiConfig.isKeySet ? (
+                        <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Connected
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-amber-500/20 text-amber-400 border-amber-500/30">
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                          Not configured
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* API Key Input */}
+                  <div>
+                    <Label htmlFor="apiKey">
+                      {config.apiConfig.provider === 'openai' ? 'OpenAI API Key' : 'Google Gemini API Key'}
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1 mb-2">
+                      {config.apiConfig.provider === 'openai' 
+                        ? 'Get your API key from platform.openai.com/api-keys'
+                        : 'Get your API key from aistudio.google.com/apikey'}
+                    </p>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Input
+                          id="apiKey"
+                          type={showApiKey ? 'text' : 'password'}
+                          value={apiKeyInput}
+                          onChange={(e) => setApiKeyInput(e.target.value)}
+                          placeholder={config.apiConfig.isKeySet ? '••••••••••••••••' : config.apiConfig.provider === 'openai' ? 'sk-...' : 'AIza...'}
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowApiKey(!showApiKey)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                      <Button onClick={handleSaveApiKey} disabled={!apiKeyInput.trim()}>
+                        Save Key
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Status & Info */}
+                  {config.apiConfig.isKeySet && (
+                    <div className="p-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10">
+                      <div className="flex items-start gap-3">
+                        <CheckCircle className="w-5 h-5 text-emerald-400 mt-0.5" />
+                        <div>
+                          <p className="font-medium text-emerald-400">API Key Configured</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Your {config.apiConfig.provider === 'openai' ? 'OpenAI' : 'Gemini'} API key is securely stored. 
+                            You can update it anytime by entering a new key above.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {!config.apiConfig.isKeySet && (
+                    <div className="p-4 rounded-lg border border-amber-500/30 bg-amber-500/10">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-amber-400 mt-0.5" />
+                        <div>
+                          <p className="font-medium text-amber-400">API Key Required</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            You need to add your {config.apiConfig.provider === 'openai' ? 'OpenAI' : 'Google Gemini'} API key 
+                            before this agent can respond to messages.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Usage note */}
+                  <div className="text-xs text-muted-foreground">
+                    <p>💡 <strong>Note:</strong> API usage costs are billed directly to your {config.apiConfig.provider === 'openai' ? 'OpenAI' : 'Google'} account. 
+                    We don't store or have access to your actual API key value after encryption.</p>
                   </div>
                 </div>
               </div>

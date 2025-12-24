@@ -1,4 +1,4 @@
-import { Bot, MoreVertical, Play, Pause, Settings, Trash2, Copy, MessageSquare } from 'lucide-react';
+import { Bot, MoreVertical, Play, Pause, Settings, Trash2, Copy, MessageSquare, Key, AlertCircle } from 'lucide-react';
 import { AIAgent, agentTypeConfig } from '@/types/aiAgents';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -112,15 +112,26 @@ const AgentCard = ({ agent, onSelect, onToggleStatus, onDelete, onDuplicate }: A
         </div>
       </div>
 
-      {/* Knowledge Base Indicator */}
-      {agent.knowledgeBase.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-border/50">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Bot className="w-3.5 h-3.5" />
-            <span>{agent.knowledgeBase.length} knowledge source{agent.knowledgeBase.length > 1 ? 's' : ''}</span>
+      {/* API & Knowledge Base Indicator */}
+      <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-between">
+        <div className="flex items-center gap-4 text-xs">
+          {agent.knowledgeBase.length > 0 && (
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Bot className="w-3.5 h-3.5" />
+              <span>{agent.knowledgeBase.length} source{agent.knowledgeBase.length > 1 ? 's' : ''}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <span className="capitalize">{agent.apiConfig.provider}</span>
           </div>
         </div>
-      )}
+        {!agent.apiConfig.isKeySet && (
+          <div className="flex items-center gap-1 text-xs text-amber-400">
+            <AlertCircle className="w-3.5 h-3.5" />
+            <span>API key needed</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
