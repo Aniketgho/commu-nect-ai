@@ -10,6 +10,7 @@ import {
   Bot,
   Users,
   UserCircle,
+  Tags,
   CreditCard,
   Settings,
   ChevronLeft,
@@ -39,6 +40,7 @@ const DashboardLayout = ({ children, panelType = "user" }: DashboardLayoutProps)
     { icon: Bot, label: "AI Agents", href: "/dashboard/ai-agents" },
     { icon: Users, label: "CRM", href: "/dashboard/crm" },
     { icon: UserCircle, label: "Contacts", href: "/dashboard/contacts" },
+    { icon: Tags, label: "Tags", href: "/dashboard/tags" },
     { icon: CreditCard, label: "Billing", href: "/dashboard/billing" },
     { icon: Settings, label: "Settings", href: "/dashboard/settings" },
   ];
