@@ -21,7 +21,17 @@ import {
   HelpCircle,
   Moon,
   Sun,
+  Phone,
+  Plus,
+  CheckCircle2,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -30,7 +40,14 @@ interface DashboardLayoutProps {
 
 const DashboardLayout = ({ children, panelType = "user" }: DashboardLayoutProps) => {
   const [collapsed, setCollapsed] = useState(false);
+  const [selectedPhone, setSelectedPhone] = useState("phone1");
   const location = useLocation();
+
+  const phoneNumbers = [
+    { id: "phone1", number: "+1 (555) 123-4567", label: "Business", status: "active" },
+    { id: "phone2", number: "+1 (555) 987-6543", label: "Support", status: "active" },
+    { id: "phone3", number: "+44 20 7946 0958", label: "UK Office", status: "inactive" },
+  ];
 
   const userNavItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -54,6 +71,7 @@ const DashboardLayout = ({ children, panelType = "user" }: DashboardLayoutProps)
   ];
 
   const navItems = panelType === "admin" ? adminNavItems : userNavItems;
+  const currentPhone = phoneNumbers.find(p => p.id === selectedPhone);
 
   return (
     <div className="flex h-screen bg-background">
@@ -82,6 +100,57 @@ const DashboardLayout = ({ children, panelType = "user" }: DashboardLayoutProps)
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </button>
         </div>
+
+        {/* Phone Number Section */}
+        {panelType === "user" && (
+          <div className="px-3 py-3 border-b border-sidebar-border">
+            {collapsed ? (
+              <button className="w-full p-2 rounded-lg bg-sidebar-accent hover:bg-sidebar-primary/20 transition-colors flex items-center justify-center">
+                <Phone className="h-5 w-5 text-primary" />
+              </button>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Phone Numbers
+                  </span>
+                  <button className="p-1 rounded hover:bg-sidebar-accent transition-colors">
+                    <Plus className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
+                  </button>
+                </div>
+                <Select value={selectedPhone} onValueChange={setSelectedPhone}>
+                  <SelectTrigger className="w-full bg-sidebar-accent border-sidebar-border text-sidebar-foreground">
+                    <SelectValue>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${currentPhone?.status === 'active' ? 'bg-green-500' : 'bg-muted-foreground'}`} />
+                        <span className="text-sm truncate">{currentPhone?.number}</span>
+                      </div>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {phoneNumbers.map((phone) => (
+                      <SelectItem key={phone.id} value={phone.id}>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${phone.status === 'active' ? 'bg-green-500' : 'bg-muted-foreground'}`} />
+                          <div className="flex flex-col">
+                            <span className="text-sm">{phone.number}</span>
+                            <span className="text-xs text-muted-foreground">{phone.label}</span>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {currentPhone?.status === 'active' && (
+                  <div className="flex items-center gap-1.5 px-1">
+                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                    <span className="text-xs text-green-500">Connected</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Navigation */}
         <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
