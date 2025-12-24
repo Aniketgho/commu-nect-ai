@@ -95,7 +95,12 @@ const Dashboard = () => {
           <div className="lg:col-span-2 glass-card p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h2 className="text-base sm:text-lg font-semibold text-foreground">Recent Conversations</h2>
-              <Button variant="ghost" size="sm" className="gap-1 text-primary text-xs sm:text-sm">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="gap-1 text-primary text-xs sm:text-sm"
+                onClick={() => navigate('/dashboard/inbox')}
+              >
                 View All <ArrowUpRight className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </div>
