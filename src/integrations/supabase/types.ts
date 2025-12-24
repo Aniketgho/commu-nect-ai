@@ -14,6 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
+      campaign_analytics: {
+        Row: {
+          campaign_id: string | null
+          conversions: number
+          created_at: string
+          date: string
+          id: string
+          messages_clicked: number
+          messages_delivered: number
+          messages_failed: number
+          messages_read: number
+          messages_sent: number
+          user_id: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          conversions?: number
+          created_at?: string
+          date?: string
+          id?: string
+          messages_clicked?: number
+          messages_delivered?: number
+          messages_failed?: number
+          messages_read?: number
+          messages_sent?: number
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string | null
+          conversions?: number
+          created_at?: string
+          date?: string
+          id?: string
+          messages_clicked?: number
+          messages_delivered?: number
+          messages_failed?: number
+          messages_read?: number
+          messages_sent?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_analytics_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_conversations: {
         Row: {
           created_at: string
@@ -72,6 +149,104 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_analytics: {
+        Row: {
+          active_users: number
+          avg_response_time_seconds: number
+          conversations_started: number
+          created_at: string
+          date: string
+          device_desktop: number
+          device_mobile: number
+          device_tablet: number
+          id: string
+          messages_clicked: number
+          messages_delivered: number
+          messages_failed: number
+          messages_read: number
+          messages_sent: number
+          user_id: string
+        }
+        Insert: {
+          active_users?: number
+          avg_response_time_seconds?: number
+          conversations_started?: number
+          created_at?: string
+          date?: string
+          device_desktop?: number
+          device_mobile?: number
+          device_tablet?: number
+          id?: string
+          messages_clicked?: number
+          messages_delivered?: number
+          messages_failed?: number
+          messages_read?: number
+          messages_sent?: number
+          user_id: string
+        }
+        Update: {
+          active_users?: number
+          avg_response_time_seconds?: number
+          conversations_started?: number
+          created_at?: string
+          date?: string
+          device_desktop?: number
+          device_mobile?: number
+          device_tablet?: number
+          id?: string
+          messages_clicked?: number
+          messages_delivered?: number
+          messages_failed?: number
+          messages_read?: number
+          messages_sent?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      message_analytics: {
+        Row: {
+          campaign_id: string | null
+          created_at: string
+          device_type: string | null
+          event_type: string
+          id: string
+          message_id: string | null
+          phone_number_id: string | null
+          response_time_seconds: number | null
+          user_id: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string
+          device_type?: string | null
+          event_type: string
+          id?: string
+          message_id?: string | null
+          phone_number_id?: string | null
+          response_time_seconds?: number | null
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string
+          device_type?: string | null
+          event_type?: string
+          id?: string
+          message_id?: string | null
+          phone_number_id?: string | null
+          response_time_seconds?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_analytics_phone_number_id_fkey"
+            columns: ["phone_number_id"]
+            isOneToOne: false
+            referencedRelation: "phone_numbers"
             referencedColumns: ["id"]
           },
         ]
