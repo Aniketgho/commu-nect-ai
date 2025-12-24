@@ -76,6 +76,42 @@ export type Database = {
           },
         ]
       }
+      phone_numbers: {
+        Row: {
+          country_code: string | null
+          created_at: string
+          id: string
+          label: string
+          phone_number: string
+          status: string
+          updated_at: string
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          country_code?: string | null
+          created_at?: string
+          id?: string
+          label: string
+          phone_number: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          country_code?: string | null
+          created_at?: string
+          id?: string
+          label?: string
+          phone_number?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       support_tickets: {
         Row: {
           created_at: string

@@ -24,6 +24,8 @@ import {
   Phone,
   Plus,
   CheckCircle2,
+  Clock,
+  Loader2,
 } from "lucide-react";
 import {
   Select,
@@ -32,6 +34,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { usePhoneNumbers } from "@/hooks/usePhoneNumbers";
+import { AddPhoneDialog } from "@/components/phone/AddPhoneDialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -40,14 +45,17 @@ interface DashboardLayoutProps {
 
 const DashboardLayout = ({ children, panelType = "user" }: DashboardLayoutProps) => {
   const [collapsed, setCollapsed] = useState(false);
-  const [selectedPhone, setSelectedPhone] = useState("phone1");
+  const [addPhoneOpen, setAddPhoneOpen] = useState(false);
   const location = useLocation();
-
-  const phoneNumbers = [
-    { id: "phone1", number: "+1 (555) 123-4567", label: "Business", status: "active" },
-    { id: "phone2", number: "+1 (555) 987-6543", label: "Support", status: "active" },
-    { id: "phone3", number: "+44 20 7946 0958", label: "UK Office", status: "inactive" },
-  ];
+  
+  const {
+    phoneNumbers,
+    loading: phonesLoading,
+    selectedPhone,
+    selectedPhoneId,
+    setSelectedPhoneId,
+    addPhoneNumber,
+  } = usePhoneNumbers();
 
   const userNavItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -71,7 +79,28 @@ const DashboardLayout = ({ children, panelType = "user" }: DashboardLayoutProps)
   ];
 
   const navItems = panelType === "admin" ? adminNavItems : userNavItems;
-  const currentPhone = phoneNumbers.find(p => p.id === selectedPhone);
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <CheckCircle2 className="h-3 w-3 text-green-500" />;
+      case 'pending':
+        return <Clock className="h-3 w-3 text-yellow-500" />;
+      default:
+        return <div className="w-2 h-2 rounded-full bg-muted-foreground" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-500';
+      case 'pending':
+        return 'bg-yellow-500';
+      default:
+        return 'bg-muted-foreground';
+    }
+  };
 
   return (
     <div className="flex h-screen bg-background">
@@ -105,7 +134,10 @@ const DashboardLayout = ({ children, panelType = "user" }: DashboardLayoutProps)
         {panelType === "user" && (
           <div className="px-3 py-3 border-b border-sidebar-border">
             {collapsed ? (
-              <button className="w-full p-2 rounded-lg bg-sidebar-accent hover:bg-sidebar-primary/20 transition-colors flex items-center justify-center">
+              <button 
+                onClick={() => setAddPhoneOpen(true)}
+                className="w-full p-2 rounded-lg bg-sidebar-accent hover:bg-sidebar-primary/20 transition-colors flex items-center justify-center"
+              >
                 <Phone className="h-5 w-5 text-primary" />
               </button>
             ) : (
@@ -114,43 +146,81 @@ const DashboardLayout = ({ children, panelType = "user" }: DashboardLayoutProps)
                   <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Phone Numbers
                   </span>
-                  <button className="p-1 rounded hover:bg-sidebar-accent transition-colors">
+                  <button 
+                    onClick={() => setAddPhoneOpen(true)}
+                    className="p-1 rounded hover:bg-sidebar-accent transition-colors"
+                  >
                     <Plus className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
                   </button>
                 </div>
-                <Select value={selectedPhone} onValueChange={setSelectedPhone}>
-                  <SelectTrigger className="w-full bg-sidebar-accent border-sidebar-border text-sidebar-foreground">
-                    <SelectValue>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${currentPhone?.status === 'active' ? 'bg-green-500' : 'bg-muted-foreground'}`} />
-                        <span className="text-sm truncate">{currentPhone?.number}</span>
+                
+                {phonesLoading ? (
+                  <Skeleton className="h-10 w-full" />
+                ) : phoneNumbers.length === 0 ? (
+                  <button
+                    onClick={() => setAddPhoneOpen(true)}
+                    className="w-full p-3 border border-dashed border-sidebar-border rounded-lg text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Phone
+                  </button>
+                ) : (
+                  <>
+                    <Select 
+                      value={selectedPhoneId || undefined} 
+                      onValueChange={setSelectedPhoneId}
+                    >
+                      <SelectTrigger className="w-full bg-sidebar-accent border-sidebar-border text-sidebar-foreground">
+                        <SelectValue placeholder="Select phone">
+                          {selectedPhone && (
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${getStatusColor(selectedPhone.status)}`} />
+                              <span className="text-sm truncate">{selectedPhone.phone_number}</span>
+                            </div>
+                          )}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {phoneNumbers.map((phone) => (
+                          <SelectItem key={phone.id} value={phone.id}>
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${getStatusColor(phone.status)}`} />
+                              <div className="flex flex-col">
+                                <span className="text-sm">{phone.phone_number}</span>
+                                <span className="text-xs text-muted-foreground">{phone.label}</span>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedPhone && (
+                      <div className="flex items-center gap-1.5 px-1">
+                        {getStatusIcon(selectedPhone.status)}
+                        <span className={`text-xs ${
+                          selectedPhone.status === 'active' 
+                            ? 'text-green-500' 
+                            : selectedPhone.status === 'pending'
+                            ? 'text-yellow-500'
+                            : 'text-muted-foreground'
+                        }`}>
+                          {selectedPhone.status === 'active' ? 'Connected' : 
+                           selectedPhone.status === 'pending' ? 'Pending Verification' : 'Inactive'}
+                        </span>
                       </div>
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {phoneNumbers.map((phone) => (
-                      <SelectItem key={phone.id} value={phone.id}>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${phone.status === 'active' ? 'bg-green-500' : 'bg-muted-foreground'}`} />
-                          <div className="flex flex-col">
-                            <span className="text-sm">{phone.number}</span>
-                            <span className="text-xs text-muted-foreground">{phone.label}</span>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {currentPhone?.status === 'active' && (
-                  <div className="flex items-center gap-1.5 px-1">
-                    <CheckCircle2 className="h-3 w-3 text-green-500" />
-                    <span className="text-xs text-green-500">Connected</span>
-                  </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
           </div>
         )}
+
+        <AddPhoneDialog
+          open={addPhoneOpen}
+          onOpenChange={setAddPhoneOpen}
+          onAdd={addPhoneNumber}
+        />
 
         {/* Navigation */}
         <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
