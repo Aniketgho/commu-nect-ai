@@ -6,6 +6,8 @@ import ChatView from "@/components/inbox/ChatView";
 import ContactProfile from "@/components/inbox/ContactProfile";
 import { Button } from "@/components/ui/button";
 import { PanelRightOpen, PanelRightClose } from "lucide-react";
+import { useTrackAnalytics } from "@/hooks/useTrackAnalytics";
+import { usePhoneNumbers } from "@/hooks/usePhoneNumbers";
 
 interface Contact {
   id: string;
@@ -155,10 +157,14 @@ const TeamInbox = () => {
   const [messages, setMessages] = useState<Message[]>(mockMessages);
   const [searchQuery, setSearchQuery] = useState("");
   const [showProfile, setShowProfile] = useState(true);
+  
+  const { trackMessageSent, trackMessageDelivered, trackMessageRead } = useTrackAnalytics();
+  const { selectedPhoneId } = usePhoneNumbers();
 
-  const handleSendMessage = (content: string) => {
+  const handleSendMessage = async (content: string) => {
+    const messageId = crypto.randomUUID();
     const newMessage: Message = {
-      id: String(messages.length + 1),
+      id: messageId,
       content,
       timestamp: new Date().toLocaleTimeString("en-US", {
         hour: "numeric",
@@ -169,6 +175,39 @@ const TeamInbox = () => {
       status: "sent",
     };
     setMessages([...messages, newMessage]);
+
+    // Track the sent message
+    await trackMessageSent({
+      message_id: messageId,
+      phone_number_id: selectedPhoneId || undefined,
+    });
+
+    // Simulate delivery after 1 second (in real app, this would come from webhook)
+    setTimeout(async () => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === messageId ? { ...msg, status: "delivered" } : msg
+        )
+      );
+      await trackMessageDelivered({
+        message_id: messageId,
+        phone_number_id: selectedPhoneId || undefined,
+      });
+
+      // Simulate read after 2 more seconds
+      setTimeout(async () => {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === messageId ? { ...msg, status: "read" } : msg
+          )
+        );
+        await trackMessageRead({
+          message_id: messageId,
+          phone_number_id: selectedPhoneId || undefined,
+          response_time_seconds: 3, // Simulated response time
+        });
+      }, 2000);
+    }, 1000);
   };
 
   const handleAssignAgent = (agentId: string) => {
