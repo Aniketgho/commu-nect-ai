@@ -25,6 +25,7 @@ import Settings from "./pages/Settings";
 import HelpSupport from "./pages/HelpSupport";
 import LiveChat from "./pages/LiveChat";
 import PhoneNumbers from "./pages/PhoneNumbers";
+import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="/dashboard/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
               <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/dashboard/phone-numbers" element={<ProtectedRoute><PhoneNumbers /></ProtectedRoute>} />
+              <Route path="/dashboard/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
               <Route path="/help" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
               <Route path="/live-chat" element={<ProtectedRoute><LiveChat /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
