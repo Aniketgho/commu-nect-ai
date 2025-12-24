@@ -20,6 +20,7 @@ import Tags from "./pages/Tags";
 import Billing from "./pages/Billing";
 import Settings from "./pages/Settings";
 import HelpSupport from "./pages/HelpSupport";
+import LiveChat from "./pages/LiveChat";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="/dashboard/billing" element={<Billing />} />
               <Route path="/dashboard/settings" element={<Settings />} />
               <Route path="/help" element={<HelpSupport />} />
+              <Route path="/live-chat" element={<LiveChat />} />
               <Route path="/admin" element={<AdminDashboard />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

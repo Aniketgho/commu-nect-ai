@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -259,17 +260,19 @@ const HelpSupport = () => {
 
         {/* Quick Contact Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="hover:border-primary/50 transition-colors cursor-pointer">
-            <CardContent className="flex items-center gap-4 p-6">
-              <div className="p-3 rounded-xl bg-primary/10">
-                <MessageCircle className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground">Live Chat</h3>
-                <p className="text-sm text-muted-foreground">Chat with us now</p>
-              </div>
-            </CardContent>
-          </Card>
+          <Link to="/live-chat">
+            <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
+              <CardContent className="flex items-center gap-4 p-6">
+                <div className="p-3 rounded-xl bg-primary/10">
+                  <MessageCircle className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Live Chat</h3>
+                  <p className="text-sm text-muted-foreground">Chat with us now</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
           
           <Card className="hover:border-primary/50 transition-colors cursor-pointer">
             <CardContent className="flex items-center gap-4 p-6">
