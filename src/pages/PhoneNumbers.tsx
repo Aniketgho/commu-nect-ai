@@ -55,12 +55,14 @@ const PhoneNumbers = () => {
   const [verifyDialogOpen, setVerifyDialogOpen] = useState(false);
   const [selectedPhone, setSelectedPhone] = useState<PhoneNumber | null>(null);
   const [editLabel, setEditLabel] = useState("");
+  const [editPhoneNumber, setEditPhoneNumber] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
   const handleEdit = (phone: PhoneNumber) => {
     setSelectedPhone(phone);
     setEditLabel(phone.label);
+    setEditPhoneNumber(phone.phone_number);
     setEditDialogOpen(true);
   };
 
@@ -76,10 +78,13 @@ const PhoneNumbers = () => {
   };
 
   const confirmEdit = async () => {
-    if (!selectedPhone || !editLabel.trim()) return;
+    if (!selectedPhone || !editLabel.trim() || !editPhoneNumber.trim()) return;
     setActionLoading(true);
     try {
-      await updatePhoneNumber(selectedPhone.id, { label: editLabel.trim() });
+      await updatePhoneNumber(selectedPhone.id, { 
+        label: editLabel.trim(),
+        phone_number: editPhoneNumber.trim()
+      });
       setEditDialogOpen(false);
     } catch (error) {
       // Error handled in hook
@@ -254,34 +259,37 @@ const PhoneNumbers = () => {
                   )}
 
                   {/* Action buttons */}
-                  <div className="flex gap-2 pt-2">
+                  <div className="flex flex-col gap-2 pt-3 border-t border-border/50">
                     {phone.status === "pending" && (
                       <Button
                         size="sm"
                         onClick={() => handleVerify(phone)}
-                        className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                        className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                       >
                         <Shield className="h-4 w-4 mr-2" />
                         Verify Now
                       </Button>
                     )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleEdit(phone)}
-                      className={`${phone.status !== "pending" ? "flex-1" : ""} hover:bg-muted`}
-                    >
-                      <Pencil className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleDelete(phone)}
-                      className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEdit(phone)}
+                        className="flex-1 hover:bg-muted"
+                      >
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDelete(phone)}
+                        className="flex-1 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -317,14 +325,27 @@ const PhoneNumbers = () => {
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Edit Phone Number</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-5 w-5 text-primary" />
+              Edit Phone Number
+            </DialogTitle>
             <DialogDescription>
-              Update the label for {selectedPhone?.phone_number}
+              Update the details for this phone number
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-phone">Phone Number</Label>
+              <Input
+                id="edit-phone"
+                value={editPhoneNumber}
+                onChange={(e) => setEditPhoneNumber(e.target.value)}
+                placeholder="+1 234 567 8900"
+                disabled={actionLoading}
+              />
+            </div>
             <div className="grid gap-2">
               <Label htmlFor="edit-label">Label</Label>
               <Input
@@ -344,7 +365,10 @@ const PhoneNumbers = () => {
             >
               Cancel
             </Button>
-            <Button onClick={confirmEdit} disabled={actionLoading || !editLabel.trim()}>
+            <Button 
+              onClick={confirmEdit} 
+              disabled={actionLoading || !editLabel.trim() || !editPhoneNumber.trim()}
+            >
               {actionLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
