@@ -67,104 +67,142 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-            <p className="text-muted-foreground">Welcome back, John! Here's what's happening.</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Dashboard</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">Welcome back! Here's what's happening.</p>
           </div>
-          <Button variant="gradient" className="gap-2">
+          <Button variant="gradient" className="gap-2 w-full sm:w-auto">
             <MessageSquare className="h-4 w-4" />
             New Campaign
           </Button>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
           {stats.map((stat) => (
             <StatCard key={stat.title} {...stat} />
           ))}
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Recent Chats */}
-          <div className="lg:col-span-2 glass-card p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-foreground">Recent Conversations</h2>
-              <Button variant="ghost" size="sm" className="gap-1 text-primary">
-                View All <ArrowUpRight className="h-4 w-4" />
+          <div className="lg:col-span-2 glass-card p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <h2 className="text-base sm:text-lg font-semibold text-foreground">Recent Conversations</h2>
+              <Button variant="ghost" size="sm" className="gap-1 text-primary text-xs sm:text-sm">
+                View All <ArrowUpRight className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-2 sm:space-y-4">
               {recentChats.map((chat) => (
                 <div 
                   key={chat.name}
-                  className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                  className="flex items-center gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
                 >
-                  <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground font-semibold text-sm flex-shrink-0">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground font-semibold text-xs sm:text-sm flex-shrink-0">
                     {chat.name.split(' ').map(n => n[0]).join('')}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-medium text-foreground truncate">{chat.name}</p>
+                      <p className="font-medium text-foreground text-sm sm:text-base truncate">{chat.name}</p>
                       {chat.unread && (
-                        <span className="w-2 h-2 bg-primary rounded-full" />
+                        <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground truncate">{chat.message}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">{chat.message}</p>
                   </div>
-                  <span className="text-xs text-muted-foreground flex-shrink-0">{chat.time}</span>
+                  <span className="text-[10px] sm:text-xs text-muted-foreground flex-shrink-0">{chat.time}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Quick Actions */}
-          <div className="glass-card p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-6">Quick Actions</h2>
-            <div className="space-y-3">
-              <button className="w-full flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-left">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <MessageSquare className="h-5 w-5 text-primary" />
+          <div className="glass-card p-4 sm:p-6">
+            <h2 className="text-base sm:text-lg font-semibold text-foreground mb-4 sm:mb-6">Quick Actions</h2>
+            <div className="space-y-2 sm:space-y-3">
+              <button className="w-full flex items-center gap-3 p-2.5 sm:p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-left">
+                <div className="p-1.5 sm:p-2 bg-primary/10 rounded-lg flex-shrink-0">
+                  <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 </div>
-                <div>
-                  <p className="font-medium text-foreground">Send Broadcast</p>
-                  <p className="text-xs text-muted-foreground">Reach your audience</p>
-                </div>
-              </button>
-              <button className="w-full flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-left">
-                <div className="p-2 bg-emerald-500/10 rounded-lg">
-                  <Bot className="h-5 w-5 text-emerald-500" />
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">Create AI Agent</p>
-                  <p className="text-xs text-muted-foreground">Automate responses</p>
+                <div className="min-w-0">
+                  <p className="font-medium text-foreground text-sm sm:text-base">Send Broadcast</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Reach your audience</p>
                 </div>
               </button>
-              <button className="w-full flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-left">
-                <div className="p-2 bg-blue-500/10 rounded-lg">
-                  <Users className="h-5 w-5 text-blue-500" />
+              <button className="w-full flex items-center gap-3 p-2.5 sm:p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-left">
+                <div className="p-1.5 sm:p-2 bg-emerald-500/10 rounded-lg flex-shrink-0">
+                  <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-500" />
                 </div>
-                <div>
-                  <p className="font-medium text-foreground">Import Contacts</p>
-                  <p className="text-xs text-muted-foreground">Grow your list</p>
+                <div className="min-w-0">
+                  <p className="font-medium text-foreground text-sm sm:text-base">Create AI Agent</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Automate responses</p>
+                </div>
+              </button>
+              <button className="w-full flex items-center gap-3 p-2.5 sm:p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-left">
+                <div className="p-1.5 sm:p-2 bg-blue-500/10 rounded-lg flex-shrink-0">
+                  <Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-medium text-foreground text-sm sm:text-base">Import Contacts</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Grow your list</p>
                 </div>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Campaigns Table */}
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-foreground">Recent Campaigns</h2>
-            <Button variant="ghost" size="sm" className="gap-1 text-primary">
-              View All <ArrowUpRight className="h-4 w-4" />
+        {/* Campaigns - Mobile Cards / Desktop Table */}
+        <div className="glass-card p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h2 className="text-base sm:text-lg font-semibold text-foreground">Recent Campaigns</h2>
+            <Button variant="ghost" size="sm" className="gap-1 text-primary text-xs sm:text-sm">
+              View All <ArrowUpRight className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
           </div>
-          <div className="overflow-x-auto">
+          
+          {/* Mobile Cards View */}
+          <div className="block sm:hidden space-y-3">
+            {campaigns.map((campaign) => (
+              <div key={campaign.name} className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="font-medium text-foreground text-sm">{campaign.name}</p>
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                    campaign.status === 'active' 
+                      ? 'bg-emerald-500/10 text-emerald-500' 
+                      : campaign.status === 'scheduled'
+                      ? 'bg-blue-500/10 text-blue-500'
+                      : 'bg-muted text-muted-foreground'
+                  }`}>
+                    {campaign.status === 'active' && <CheckCircle2 className="h-2.5 w-2.5" />}
+                    {campaign.status === 'scheduled' && <Clock className="h-2.5 w-2.5" />}
+                    {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="bg-background/50 rounded p-2">
+                    <p className="text-[10px] text-muted-foreground">Sent</p>
+                    <p className="text-sm font-semibold text-foreground">{campaign.sent.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-background/50 rounded p-2">
+                    <p className="text-[10px] text-muted-foreground">Delivered</p>
+                    <p className="text-sm font-semibold text-foreground">{campaign.delivered.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-background/50 rounded p-2">
+                    <p className="text-[10px] text-muted-foreground">Read</p>
+                    <p className="text-sm font-semibold text-foreground">{campaign.read.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
