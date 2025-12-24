@@ -172,7 +172,12 @@ const Dashboard = () => {
         <div className="glass-card p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4 sm:mb-6">
             <h2 className="text-base sm:text-lg font-semibold text-foreground">Recent Campaigns</h2>
-            <Button variant="ghost" size="sm" className="gap-1 text-primary text-xs sm:text-sm">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="gap-1 text-primary text-xs sm:text-sm"
+              onClick={() => navigate('/dashboard/campaigns')}
+            >
               View All <ArrowUpRight className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
           </div>
@@ -180,7 +185,11 @@ const Dashboard = () => {
           {/* Mobile Cards View */}
           <div className="block sm:hidden space-y-3">
             {campaigns.map((campaign) => (
-              <div key={campaign.name} className="p-3 rounded-lg bg-muted/30 border border-border/50">
+              <button 
+                key={campaign.name} 
+                onClick={() => navigate('/dashboard/campaigns')}
+                className="w-full p-3 rounded-lg bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors text-left"
+              >
                 <div className="flex items-center justify-between mb-2">
                   <p className="font-medium text-foreground text-sm">{campaign.name}</p>
                   <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
@@ -209,7 +218,7 @@ const Dashboard = () => {
                     <p className="text-sm font-semibold text-foreground">{campaign.read.toLocaleString()}</p>
                   </div>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
 
@@ -227,7 +236,11 @@ const Dashboard = () => {
               </thead>
               <tbody>
                 {campaigns.map((campaign) => (
-                  <tr key={campaign.name} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                  <tr 
+                    key={campaign.name} 
+                    onClick={() => navigate('/dashboard/campaigns')}
+                    className="border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer"
+                  >
                     <td className="py-4 px-4">
                       <p className="font-medium text-foreground">{campaign.name}</p>
                     </td>
