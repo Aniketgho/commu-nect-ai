@@ -64,6 +64,7 @@ const DashboardLayout = ({ children, panelType = "user" }: DashboardLayoutProps)
   const userNavItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
     { icon: Inbox, label: "Inbox", href: "/dashboard/inbox" },
+    { icon: Phone, label: "Phone Numbers", href: "/dashboard/phone-numbers" },
     { icon: Megaphone, label: "Campaigns", href: "/dashboard/campaigns" },
     { icon: Workflow, label: "Automation", href: "/dashboard/automation" },
     { icon: Bot, label: "AI Agents", href: "/dashboard/ai-agents" },
