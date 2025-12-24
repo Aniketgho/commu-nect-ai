@@ -18,15 +18,35 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  Send
+  Send,
+  Loader2,
+  XCircle
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { formatDistanceToNow } from "date-fns";
+
+interface SupportTicket {
+  id: string;
+  ticket_number: string;
+  subject: string;
+  message: string;
+  status: string;
+  priority: string;
+  created_at: string;
+  updated_at: string;
+}
 
 const HelpSupport = () => {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [ticketSubject, setTicketSubject] = useState("");
   const [ticketMessage, setTicketMessage] = useState("");
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const faqs = [
     {
@@ -123,38 +143,65 @@ const HelpSupport = () => {
     }
   ];
 
-  const recentTickets = [
-    {
-      id: "TKT-001",
-      subject: "Unable to send bulk messages",
-      status: "resolved",
-      created: "2 days ago",
-      lastUpdate: "1 day ago"
-    },
-    {
-      id: "TKT-002",
-      subject: "Integration with Zapier not working",
-      status: "in-progress",
-      created: "5 days ago",
-      lastUpdate: "3 hours ago"
-    },
-    {
-      id: "TKT-003",
-      subject: "Request for API documentation",
-      status: "open",
-      created: "1 week ago",
-      lastUpdate: "2 days ago"
-    }
-  ];
+  // Fetch tickets from database
+  const fetchTickets = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('support_tickets')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  const handleSubmitTicket = () => {
+      if (error) throw error;
+      setTickets(data || []);
+    } catch (error) {
+      console.error('Error fetching tickets:', error);
+      toast.error('Failed to load tickets');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTickets();
+  }, [user]);
+
+  const handleSubmitTicket = async () => {
     if (!ticketSubject || !ticketMessage) {
       toast.error("Please fill in all fields");
       return;
     }
-    toast.success("Support ticket submitted successfully!");
-    setTicketSubject("");
-    setTicketMessage("");
+
+    if (!user) {
+      toast.error("Please log in to submit a ticket");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('support_tickets')
+        .insert([{
+          user_id: user.id,
+          subject: ticketSubject,
+          message: ticketMessage,
+          ticket_number: '' // Will be set by trigger
+        }] as any);
+
+      if (error) throw error;
+
+      toast.success("Support ticket submitted successfully!");
+      setTicketSubject("");
+      setTicketMessage("");
+      fetchTickets(); // Refresh the tickets list
+    } catch (error) {
+      console.error('Error submitting ticket:', error);
+      toast.error("Failed to submit ticket. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const filteredFaqs = faqs.map(category => ({
@@ -173,8 +220,18 @@ const HelpSupport = () => {
         return <Badge className="bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20"><Clock className="h-3 w-3 mr-1" /> In Progress</Badge>;
       case "open":
         return <Badge className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20"><AlertCircle className="h-3 w-3 mr-1" /> Open</Badge>;
+      case "closed":
+        return <Badge className="bg-muted text-muted-foreground hover:bg-muted"><XCircle className="h-3 w-3 mr-1" /> Closed</Badge>;
       default:
         return null;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+    } catch {
+      return dateString;
     }
   };
 
@@ -304,10 +361,24 @@ const HelpSupport = () => {
                       onChange={(e) => setTicketMessage(e.target.value)}
                     />
                   </div>
-                  <Button onClick={handleSubmitTicket} className="w-full">
-                    <Send className="h-4 w-4 mr-2" />
-                    Submit Ticket
+                  <Button onClick={handleSubmitTicket} className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4 mr-2" />
+                        Submit Ticket
+                      </>
+                    )}
                   </Button>
+                  {!user && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      Please log in to submit and track support tickets.
+                    </p>
+                  )}
                 </CardContent>
               </Card>
 
@@ -318,28 +389,42 @@ const HelpSupport = () => {
                   <CardDescription>Track your support requests</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {recentTickets.map((ticket) => (
-                    <div 
-                      key={ticket.id} 
-                      className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-mono text-muted-foreground">{ticket.id}</span>
-                            {getStatusBadge(ticket.status)}
-                          </div>
-                          <p className="font-medium text-foreground truncate">{ticket.subject}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Created {ticket.created} • Updated {ticket.lastUpdate}
-                          </p>
-                        </div>
-                        <Button variant="ghost" size="sm">
-                          View
-                        </Button>
-                      </div>
+                  {isLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     </div>
-                  ))}
+                  ) : tickets.length === 0 ? (
+                    <div className="text-center py-8">
+                      <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-muted-foreground">No tickets yet</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Submit a ticket to get help from our support team.
+                      </p>
+                    </div>
+                  ) : (
+                    tickets.map((ticket) => (
+                      <div 
+                        key={ticket.id} 
+                        className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-xs font-mono text-muted-foreground">{ticket.ticket_number}</span>
+                              {getStatusBadge(ticket.status)}
+                            </div>
+                            <p className="font-medium text-foreground truncate">{ticket.subject}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Created {formatDate(ticket.created_at)} • Updated {formatDate(ticket.updated_at)}
+                            </p>
+                          </div>
+                          <Button variant="ghost" size="sm">
+                            View
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </CardContent>
               </Card>
             </div>
