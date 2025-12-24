@@ -1,10 +1,23 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import AddCardDialog from "@/components/billing/AddCardDialog";
+import ChangePlanDialog from "@/components/billing/ChangePlanDialog";
+import CancelSubscriptionDialog from "@/components/billing/CancelSubscriptionDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   CreditCard, 
   Download, 
@@ -13,16 +26,59 @@ import {
   MessageSquare,
   Users,
   Bot,
-  TrendingUp,
   Calendar,
   FileText,
   AlertCircle,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Trash2,
+  Star,
+  Plus,
+  Edit2,
+  Loader2
 } from "lucide-react";
+import { toast } from "sonner";
+
+interface PaymentCard {
+  id: string;
+  brand: string;
+  last4: string;
+  expMonth: string;
+  expYear: string;
+  isDefault: boolean;
+}
 
 const Billing = () => {
-  const [selectedPlan, setSelectedPlan] = useState('pro');
+  const [currentPlanId, setCurrentPlanId] = useState('pro');
+  const [isCancelled, setIsCancelled] = useState(false);
+  const [showAddCardDialog, setShowAddCardDialog] = useState(false);
+  const [showChangePlanDialog, setShowChangePlanDialog] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showAddressDialog, setShowAddressDialog] = useState(false);
+  const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
+
+  const [cards, setCards] = useState<PaymentCard[]>([
+    {
+      id: '1',
+      brand: 'VISA',
+      last4: '4242',
+      expMonth: '12',
+      expYear: '2026',
+      isDefault: true,
+    },
+  ]);
+
+  const [billingAddress, setBillingAddress] = useState({
+    company: 'Acme Inc',
+    address1: '123 Business Street',
+    address2: 'Suite 100',
+    city: 'San Francisco',
+    state: 'CA',
+    zip: '94105',
+    country: 'United States',
+  });
+
+  const [editAddress, setEditAddress] = useState(billingAddress);
 
   const plans = [
     {
@@ -81,7 +137,7 @@ const Billing = () => {
     { 
       label: 'Messages Sent', 
       value: 12458, 
-      limit: 50000, 
+      limit: currentPlanId === 'starter' ? 5000 : currentPlanId === 'pro' ? 50000 : 999999, 
       icon: MessageSquare,
       color: 'text-primary',
       bgColor: 'bg-primary/10'
@@ -89,7 +145,7 @@ const Billing = () => {
     { 
       label: 'Active Contacts', 
       value: 3240, 
-      limit: 10000, 
+      limit: currentPlanId === 'starter' ? 1000 : currentPlanId === 'pro' ? 10000 : 999999, 
       icon: Users,
       color: 'text-blue-500',
       bgColor: 'bg-blue-500/10'
@@ -97,7 +153,7 @@ const Billing = () => {
     { 
       label: 'AI Responses', 
       value: 8920, 
-      limit: 20000, 
+      limit: currentPlanId === 'starter' ? 2000 : currentPlanId === 'pro' ? 20000 : 999999, 
       icon: Bot,
       color: 'text-emerald-500',
       bgColor: 'bg-emerald-500/10'
@@ -105,22 +161,80 @@ const Billing = () => {
     { 
       label: 'Campaigns', 
       value: 12, 
-      limit: 50, 
+      limit: currentPlanId === 'starter' ? 10 : currentPlanId === 'pro' ? 50 : 999999, 
       icon: Zap,
       color: 'text-violet-500',
       bgColor: 'bg-violet-500/10'
     },
   ];
 
-  const invoices = [
+  const [invoices, setInvoices] = useState([
     { id: 'INV-2024-012', date: 'Dec 24, 2024', amount: 49.00, status: 'Paid' },
     { id: 'INV-2024-011', date: 'Nov 24, 2024', amount: 49.00, status: 'Paid' },
     { id: 'INV-2024-010', date: 'Oct 24, 2024', amount: 49.00, status: 'Paid' },
     { id: 'INV-2024-009', date: 'Sep 24, 2024', amount: 49.00, status: 'Paid' },
     { id: 'INV-2024-008', date: 'Aug 24, 2024', amount: 49.00, status: 'Paid' },
-  ];
+  ]);
 
-  const currentPlan = plans.find(p => p.id === 'pro');
+  const currentPlan = plans.find(p => p.id === currentPlanId);
+
+  const handleAddCard = (card: PaymentCard) => {
+    setCards(prev => [...prev, card]);
+  };
+
+  const handleSetDefaultCard = (cardId: string) => {
+    setCards(prev => prev.map(c => ({
+      ...c,
+      isDefault: c.id === cardId,
+    })));
+    toast.success('Default payment method updated');
+  };
+
+  const handleDeleteCard = (cardId: string) => {
+    const card = cards.find(c => c.id === cardId);
+    if (card?.isDefault) {
+      toast.error('Cannot delete the default payment method');
+      return;
+    }
+    setCards(prev => prev.filter(c => c.id !== cardId));
+    toast.success('Card removed');
+  };
+
+  const handleChangePlan = (planId: string) => {
+    setCurrentPlanId(planId);
+    setIsCancelled(false);
+  };
+
+  const handleCancelSubscription = () => {
+    setIsCancelled(true);
+  };
+
+  const handleReactivate = () => {
+    setIsCancelled(false);
+    toast.success('Subscription reactivated!');
+  };
+
+  const handleUpdateAddress = async () => {
+    setIsUpdatingAddress(true);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setBillingAddress(editAddress);
+    setIsUpdatingAddress(false);
+    setShowAddressDialog(false);
+    toast.success('Billing address updated');
+  };
+
+  const handleDownloadInvoice = (invoiceId: string) => {
+    toast.success(`Downloading ${invoiceId}...`);
+  };
+
+  const getCardBrandColor = (brand: string) => {
+    switch (brand) {
+      case 'VISA': return 'from-blue-600 to-blue-800';
+      case 'MC': return 'from-red-500 to-orange-500';
+      case 'AMEX': return 'from-blue-400 to-blue-600';
+      default: return 'from-gray-600 to-gray-800';
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -138,19 +252,32 @@ const Billing = () => {
         </div>
 
         {/* Current Plan Card */}
-        <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+        <Card className={`border-2 ${isCancelled ? 'border-amber-500/50 bg-amber-500/5' : 'border-primary/20 bg-gradient-to-r from-primary/5 to-transparent'}`}>
           <CardContent className="pt-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-primary/10 rounded-xl">
-                  <Sparkles className="h-8 w-8 text-primary" />
+                <div className={`p-3 rounded-xl ${isCancelled ? 'bg-amber-500/10' : 'bg-primary/10'}`}>
+                  <Sparkles className={`h-8 w-8 ${isCancelled ? 'text-amber-500' : 'text-primary'}`} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-2xl font-bold text-foreground">{currentPlan?.name} Plan</h2>
-                    <Badge className="bg-primary">Current</Badge>
+                    {isCancelled ? (
+                      <Badge variant="outline" className="border-amber-500 text-amber-500">
+                        Cancelling
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-primary">Active</Badge>
+                    )}
                   </div>
-                  <p className="text-muted-foreground">${currentPlan?.price}/month • Billed monthly</p>
+                  <p className="text-muted-foreground">
+                    ${currentPlan?.price}/month • Billed monthly
+                  </p>
+                  {isCancelled && (
+                    <p className="text-sm text-amber-500 mt-1">
+                      Your subscription will end on January 24, 2025
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -163,10 +290,24 @@ const Billing = () => {
                 </div>
                 <Separator orientation="vertical" className="h-10" />
                 <div className="flex gap-2">
-                  <Button variant="outline">Change Plan</Button>
-                  <Button variant="ghost" className="text-destructive hover:text-destructive">
-                    Cancel
-                  </Button>
+                  {isCancelled ? (
+                    <Button onClick={handleReactivate}>
+                      Reactivate Plan
+                    </Button>
+                  ) : (
+                    <>
+                      <Button variant="outline" onClick={() => setShowChangePlanDialog(true)}>
+                        Change Plan
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setShowCancelDialog(true)}
+                      >
+                        Cancel
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -178,7 +319,8 @@ const Billing = () => {
           <h3 className="text-lg font-semibold text-foreground mb-4">Usage This Billing Period</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {usage.map((item) => {
-              const percent = Math.round((item.value / item.limit) * 100);
+              const percent = item.limit === 999999 ? 0 : Math.round((item.value / item.limit) * 100);
+              const isUnlimited = item.limit === 999999;
               return (
                 <Card key={item.label} className="border-border">
                   <CardContent className="pt-6">
@@ -193,14 +335,16 @@ const Billing = () => {
                         </p>
                       </div>
                     </div>
-                    <Progress value={percent} className="h-2" />
+                    <Progress value={isUnlimited ? 0 : percent} className="h-2" />
                     <div className="flex justify-between mt-2">
-                      <span className="text-xs text-muted-foreground">{percent}% used</span>
                       <span className="text-xs text-muted-foreground">
-                        {item.limit.toLocaleString()} limit
+                        {isUnlimited ? 'Unlimited' : `${percent}% used`}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {isUnlimited ? '∞' : item.limit.toLocaleString()} limit
                       </span>
                     </div>
-                    {percent > 80 && (
+                    {!isUnlimited && percent > 80 && (
                       <div className="flex items-center gap-1 mt-2 text-amber-500 text-xs">
                         <AlertCircle className="h-3 w-3" />
                         <span>Approaching limit</span>
@@ -221,12 +365,17 @@ const Billing = () => {
               <Card 
                 key={plan.id}
                 className={`border-border relative transition-all hover:shadow-lg ${
-                  plan.popular ? 'border-primary ring-1 ring-primary' : ''
-                } ${selectedPlan === plan.id ? 'bg-muted/30' : ''}`}
+                  plan.id === currentPlanId ? 'border-primary ring-1 ring-primary' : ''
+                }`}
               >
-                {plan.popular && (
+                {plan.popular && plan.id !== currentPlanId && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <Badge className="bg-primary shadow-lg">Most Popular</Badge>
+                  </div>
+                )}
+                {plan.id === currentPlanId && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <Badge className="bg-emerald-500 shadow-lg">Current Plan</Badge>
                   </div>
                 )}
                 <CardHeader className="text-center pt-8">
@@ -248,10 +397,12 @@ const Billing = () => {
                   </ul>
                   <Button 
                     className="w-full mt-4"
-                    variant={plan.id === 'pro' ? 'default' : 'outline'}
-                    disabled={plan.id === 'pro'}
+                    variant={plan.id === currentPlanId ? 'secondary' : plan.popular ? 'default' : 'outline'}
+                    disabled={plan.id === currentPlanId}
+                    onClick={() => setShowChangePlanDialog(true)}
                   >
-                    {plan.id === 'pro' ? 'Current Plan' : 'Upgrade'}
+                    {plan.id === currentPlanId ? 'Current Plan' : 
+                     plan.price > (currentPlan?.price || 0) ? 'Upgrade' : 'Downgrade'}
                   </Button>
                 </CardContent>
               </Card>
@@ -259,50 +410,109 @@ const Billing = () => {
           </div>
         </div>
 
-        {/* Payment Method & Invoices */}
+        {/* Payment Method & Billing Address */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Payment Method */}
+          {/* Payment Methods */}
           <Card className="border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-foreground">
-                <CreditCard className="h-5 w-5 text-primary" />
-                Payment Method
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <CreditCard className="h-5 w-5 text-primary" />
+                  Payment Methods
+                </CardTitle>
+                <Button size="sm" onClick={() => setShowAddCardDialog(true)}>
+                  <Plus className="h-4 w-4 mr-1" /> Add Card
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-8 bg-gradient-to-r from-blue-600 to-blue-800 rounded flex items-center justify-center text-white text-xs font-bold">
-                    VISA
+            <CardContent className="space-y-3">
+              {cards.map((card) => (
+                <div 
+                  key={card.id}
+                  className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`w-14 h-9 bg-gradient-to-r ${getCardBrandColor(card.brand)} rounded flex items-center justify-center text-white text-xs font-bold`}>
+                      {card.brand}
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">•••• •••• •••• {card.last4}</p>
+                      <p className="text-sm text-muted-foreground">Expires {card.expMonth}/{card.expYear}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-foreground">•••• •••• •••• 4242</p>
-                    <p className="text-sm text-muted-foreground">Expires 12/2026</p>
+                  <div className="flex items-center gap-2">
+                    {card.isDefault ? (
+                      <Badge variant="outline" className="border-primary text-primary">
+                        <Star className="h-3 w-3 mr-1 fill-current" />
+                        Default
+                      </Badge>
+                    ) : (
+                      <>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleSetDefaultCard(card.id)}
+                        >
+                          Set Default
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteCard(card.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
-                <Badge variant="outline">Default</Badge>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1">Update Card</Button>
-                <Button variant="outline" className="flex-1">Add New Card</Button>
-              </div>
+              ))}
+              {cards.length === 0 && (
+                <div className="text-center py-8">
+                  <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-muted-foreground">No payment methods added</p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4"
+                    onClick={() => setShowAddCardDialog(true)}
+                  >
+                    Add Payment Method
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
           {/* Billing Address */}
           <Card className="border-border">
             <CardHeader>
-              <CardTitle className="text-foreground">Billing Address</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-foreground">Billing Address</CardTitle>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    setEditAddress(billingAddress);
+                    setShowAddressDialog(true);
+                  }}
+                >
+                  <Edit2 className="h-4 w-4 mr-1" /> Edit
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="p-4 bg-muted/30 rounded-lg border border-border">
-                <p className="font-medium text-foreground">Acme Inc</p>
-                <p className="text-muted-foreground">123 Business Street</p>
-                <p className="text-muted-foreground">Suite 100</p>
-                <p className="text-muted-foreground">San Francisco, CA 94105</p>
-                <p className="text-muted-foreground">United States</p>
+                <p className="font-medium text-foreground">{billingAddress.company}</p>
+                <p className="text-muted-foreground">{billingAddress.address1}</p>
+                {billingAddress.address2 && (
+                  <p className="text-muted-foreground">{billingAddress.address2}</p>
+                )}
+                <p className="text-muted-foreground">
+                  {billingAddress.city}, {billingAddress.state} {billingAddress.zip}
+                </p>
+                <p className="text-muted-foreground">{billingAddress.country}</p>
               </div>
-              <Button variant="outline" className="w-full mt-4">Update Address</Button>
             </CardContent>
           </Card>
         </div>
@@ -346,7 +556,12 @@ const Billing = () => {
                         </Badge>
                       </td>
                       <td className="py-4 px-4 text-right">
-                        <Button variant="ghost" size="sm" className="gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="gap-1"
+                          onClick={() => handleDownloadInvoice(invoice.id)}
+                        >
                           <Download className="h-4 w-4" />
                           PDF
                         </Button>
@@ -359,6 +574,116 @@ const Billing = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialogs */}
+      <AddCardDialog
+        open={showAddCardDialog}
+        onOpenChange={setShowAddCardDialog}
+        onAddCard={handleAddCard}
+      />
+
+      <ChangePlanDialog
+        open={showChangePlanDialog}
+        onOpenChange={setShowChangePlanDialog}
+        currentPlanId={currentPlanId}
+        plans={plans}
+        onChangePlan={handleChangePlan}
+      />
+
+      <CancelSubscriptionDialog
+        open={showCancelDialog}
+        onOpenChange={setShowCancelDialog}
+        planName={currentPlan?.name || ''}
+        billingEndDate="January 24, 2025"
+        onCancel={handleCancelSubscription}
+      />
+
+      {/* Address Dialog */}
+      <Dialog open={showAddressDialog} onOpenChange={setShowAddressDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Billing Address</DialogTitle>
+            <DialogDescription>Update your billing address information</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="company">Company Name</Label>
+              <Input
+                id="company"
+                value={editAddress.company}
+                onChange={(e) => setEditAddress({ ...editAddress, company: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="address1">Address Line 1</Label>
+              <Input
+                id="address1"
+                value={editAddress.address1}
+                onChange={(e) => setEditAddress({ ...editAddress, address1: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="address2">Address Line 2</Label>
+              <Input
+                id="address2"
+                value={editAddress.address2}
+                onChange={(e) => setEditAddress({ ...editAddress, address2: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  value={editAddress.city}
+                  onChange={(e) => setEditAddress({ ...editAddress, city: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="state">State</Label>
+                <Input
+                  id="state"
+                  value={editAddress.state}
+                  onChange={(e) => setEditAddress({ ...editAddress, state: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="zip">ZIP Code</Label>
+                <Input
+                  id="zip"
+                  value={editAddress.zip}
+                  onChange={(e) => setEditAddress({ ...editAddress, zip: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="country">Country</Label>
+                <Input
+                  id="country"
+                  value={editAddress.country}
+                  onChange={(e) => setEditAddress({ ...editAddress, country: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddressDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateAddress} disabled={isUpdatingAddress}>
+              {isUpdatingAddress ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Saving...
+                </>
+              ) : (
+                'Save Address'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
