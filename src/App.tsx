@@ -10,8 +10,8 @@ import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import TeamInbox from "./pages/TeamInbox";
+import FlowBuilder from "./pages/FlowBuilder";
 import NotFound from "./pages/NotFound";
-
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -27,6 +27,7 @@ const App = () => (
             <Route path="/signup" element={<Signup />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/inbox" element={<TeamInbox />} />
+            <Route path="/dashboard/automation" element={<FlowBuilder />} />
             <Route path="/admin" element={<AdminDashboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
