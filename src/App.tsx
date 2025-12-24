@@ -19,6 +19,7 @@ import Contacts from "./pages/Contacts";
 import Tags from "./pages/Tags";
 import Billing from "./pages/Billing";
 import Settings from "./pages/Settings";
+import HelpSupport from "./pages/HelpSupport";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="/dashboard/tags" element={<Tags />} />
               <Route path="/dashboard/billing" element={<Billing />} />
               <Route path="/dashboard/settings" element={<Settings />} />
+              <Route path="/help" element={<HelpSupport />} />
               <Route path="/admin" element={<AdminDashboard />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
