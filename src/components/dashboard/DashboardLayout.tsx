@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 import {
   MessageSquare,
   LayoutDashboard,
@@ -47,6 +49,8 @@ const DashboardLayout = ({ children, panelType = "user" }: DashboardLayoutProps)
   const [collapsed, setCollapsed] = useState(false);
   const [addPhoneOpen, setAddPhoneOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   
   const {
     phoneNumbers,
@@ -252,7 +256,14 @@ const DashboardLayout = ({ children, panelType = "user" }: DashboardLayoutProps)
             <HelpCircle className="h-5 w-5" />
             {!collapsed && <span className="text-sm">Help & Support</span>}
           </Link>
-          <button className="flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent transition-colors w-full">
+          <button 
+            onClick={async () => {
+              await signOut();
+              toast.success("Logged out successfully");
+              navigate("/login");
+            }}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent transition-colors w-full"
+          >
             <LogOut className="h-5 w-5" />
             {!collapsed && <span className="text-sm">Logout</span>}
           </button>
@@ -284,11 +295,13 @@ const DashboardLayout = ({ children, panelType = "user" }: DashboardLayoutProps)
             </button>
             <div className="flex items-center gap-3 pl-4 border-l border-border">
               <div className="text-right">
-                <p className="text-sm font-medium text-foreground">John Doe</p>
-                <p className="text-xs text-muted-foreground">Admin</p>
+                <p className="text-sm font-medium text-foreground">
+                  {user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'}
+                </p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
               </div>
               <div className="w-9 h-9 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground font-semibold text-sm">
-                JD
+                {(user?.user_metadata?.name || user?.email || 'U').charAt(0).toUpperCase()}
               </div>
             </div>
           </div>
