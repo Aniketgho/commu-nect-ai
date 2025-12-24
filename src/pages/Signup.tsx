@@ -125,7 +125,7 @@ const Signup = () => {
           <Link to="/" className="flex items-center gap-2 group">
             <div className="relative">
               <div className="absolute inset-0 bg-primary/20 rounded-lg blur-lg group-hover:bg-primary/30 transition-colors" />
-              <div className="relative bg-gradient-primary p-2 rounded-lg">
+              <div className="relative bg-primary p-2 rounded-lg">
                 <MessageSquare className="h-5 w-5 text-primary-foreground" />
               </div>
             </div>
