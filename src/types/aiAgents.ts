@@ -6,7 +6,7 @@ export interface AIAgent {
   description: string;
   type: 'sales' | 'support' | 'booking' | 'lead_qualification' | 'custom';
   status: 'active' | 'inactive' | 'draft';
-  model: 'gemini-2.5-flash' | 'gemini-2.5-pro' | 'gpt-5' | 'gpt-5-mini';
+  model: 'gemini-2.5-flash' | 'gemini-2.5-pro' | 'gpt-5' | 'gpt-5-mini' | 'gpt-4o' | 'gpt-4o-mini';
   systemPrompt: string;
   welcomeMessage: string;
   fallbackMessage: string;
@@ -17,6 +17,12 @@ export interface AIAgent {
   successRate: number;
   createdAt: Date;
   updatedAt: Date;
+  // API Configuration
+  apiConfig: {
+    provider: 'openai' | 'gemini';
+    apiKey: string;
+    isKeySet: boolean;
+  };
 }
 
 export interface KnowledgeBaseItem {
@@ -62,10 +68,12 @@ export const agentTypeConfig = {
 };
 
 export const modelOptions = [
-  { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', description: 'Fast & balanced' },
-  { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', description: 'Most capable' },
-  { value: 'gpt-5', label: 'GPT-5', description: 'OpenAI flagship' },
-  { value: 'gpt-5-mini', label: 'GPT-5 Mini', description: 'Fast & efficient' },
+  { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', description: 'Fast & balanced', provider: 'gemini' },
+  { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', description: 'Most capable', provider: 'gemini' },
+  { value: 'gpt-4o', label: 'GPT-4o', description: 'OpenAI latest', provider: 'openai' },
+  { value: 'gpt-4o-mini', label: 'GPT-4o Mini', description: 'Fast & efficient', provider: 'openai' },
+  { value: 'gpt-5', label: 'GPT-5', description: 'OpenAI flagship', provider: 'openai' },
+  { value: 'gpt-5-mini', label: 'GPT-5 Mini', description: 'Fast & powerful', provider: 'openai' },
 ];
 
 export const languageOptions = [
@@ -101,6 +109,11 @@ export const mockAgents: AIAgent[] = [
     successRate: 78,
     createdAt: new Date('2024-01-15'),
     updatedAt: new Date('2024-03-10'),
+    apiConfig: {
+      provider: 'gemini',
+      apiKey: '',
+      isKeySet: true,
+    },
   },
   {
     id: '2',
@@ -121,6 +134,11 @@ export const mockAgents: AIAgent[] = [
     successRate: 92,
     createdAt: new Date('2024-02-01'),
     updatedAt: new Date('2024-03-12'),
+    apiConfig: {
+      provider: 'gemini',
+      apiKey: '',
+      isKeySet: true,
+    },
   },
   {
     id: '3',
@@ -128,7 +146,7 @@ export const mockAgents: AIAgent[] = [
     description: 'Schedules meetings and appointments',
     type: 'booking',
     status: 'draft',
-    model: 'gpt-5-mini',
+    model: 'gpt-4o-mini',
     systemPrompt: 'You are a booking assistant...',
     welcomeMessage: 'Hi! I can help you schedule an appointment.',
     fallbackMessage: 'Please contact us directly to book.',
@@ -139,5 +157,10 @@ export const mockAgents: AIAgent[] = [
     successRate: 0,
     createdAt: new Date('2024-03-01'),
     updatedAt: new Date('2024-03-01'),
+    apiConfig: {
+      provider: 'openai',
+      apiKey: '',
+      isKeySet: false,
+    },
   },
 ];

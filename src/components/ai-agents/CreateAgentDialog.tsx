@@ -34,6 +34,9 @@ const CreateAgentDialog = ({ open, onClose, onCreate }: CreateAgentDialogProps) 
   const handleCreate = () => {
     if (!selectedType) return;
     
+    const selectedModel = modelOptions.find((m) => m.value === formData.model);
+    const provider = (selectedModel?.provider || 'gemini') as 'openai' | 'gemini';
+    
     onCreate({
       name: formData.name,
       description: formData.description,
@@ -48,6 +51,11 @@ const CreateAgentDialog = ({ open, onClose, onCreate }: CreateAgentDialogProps) 
       knowledgeBase: [],
       conversations: 0,
       successRate: 0,
+      apiConfig: {
+        provider,
+        apiKey: '',
+        isKeySet: false,
+      },
     });
     
     // Reset state
