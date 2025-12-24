@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import StatCard from "@/components/dashboard/StatCard";
 import { 
@@ -13,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const stats = [
     {
       title: "Total Messages",
@@ -99,9 +101,10 @@ const Dashboard = () => {
             </div>
             <div className="space-y-2 sm:space-y-4">
               {recentChats.map((chat) => (
-                <div 
+                <button 
                   key={chat.name}
-                  className="flex items-center gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => navigate('/dashboard/inbox')}
+                  className="w-full flex items-center gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer text-left"
                 >
                   <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground font-semibold text-xs sm:text-sm flex-shrink-0">
                     {chat.name.split(' ').map(n => n[0]).join('')}
@@ -116,7 +119,7 @@ const Dashboard = () => {
                     <p className="text-xs sm:text-sm text-muted-foreground truncate">{chat.message}</p>
                   </div>
                   <span className="text-[10px] sm:text-xs text-muted-foreground flex-shrink-0">{chat.time}</span>
-                </div>
+                </button>
               ))}
             </div>
           </div>
