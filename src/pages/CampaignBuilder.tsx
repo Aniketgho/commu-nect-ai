@@ -3,10 +3,10 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import TemplateCard from "@/components/campaigns/TemplateCard";
+import TemplateEditor from "@/components/campaigns/TemplateEditor";
 import AudienceSelector from "@/components/campaigns/AudienceSelector";
 import CampaignScheduler, { ScheduleData } from "@/components/campaigns/CampaignScheduler";
 import CampaignAnalytics from "@/components/campaigns/CampaignAnalytics";
@@ -22,7 +22,6 @@ import {
   Plus,
   Search,
   FileText,
-  Users,
   Send,
   BarChart3,
   ArrowLeft,
@@ -34,8 +33,12 @@ type WizardStep = 'template' | 'audience' | 'schedule';
 
 const CampaignBuilder = () => {
   const [activeTab, setActiveTab] = useState("campaigns");
-  const [templates] = useState<MessageTemplate[]>(mockTemplates);
+  const [templates, setTemplates] = useState<MessageTemplate[]>(mockTemplates);
   const [campaigns, setCampaigns] = useState<Campaign[]>(mockCampaigns);
+  
+  // Template editor state
+  const [isTemplateEditorOpen, setIsTemplateEditorOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<MessageTemplate | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Campaign creation wizard state
@@ -98,6 +101,48 @@ const CampaignBuilder = () => {
 
   const handleViewCampaign = (campaign: Campaign) => {
     setSelectedCampaign(campaign);
+  };
+
+  const handleCreateTemplate = () => {
+    setEditingTemplate(null);
+    setIsTemplateEditorOpen(true);
+  };
+
+  const handleEditTemplate = (template: MessageTemplate) => {
+    setEditingTemplate(template);
+    setIsTemplateEditorOpen(true);
+  };
+
+  const handleDuplicateTemplate = (template: MessageTemplate) => {
+    const duplicated: MessageTemplate = {
+      ...template,
+      id: Date.now().toString(),
+      name: `${template.name}_copy`,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setTemplates([duplicated, ...templates]);
+    toast.success('Template duplicated successfully');
+  };
+
+  const handleDeleteTemplate = (template: MessageTemplate) => {
+    setTemplates(templates.filter((t) => t.id !== template.id));
+    toast.success('Template deleted');
+  };
+
+  const handleSaveTemplate = (templateData: Partial<MessageTemplate>) => {
+    if (editingTemplate) {
+      setTemplates(
+        templates.map((t) =>
+          t.id === editingTemplate.id ? { ...t, ...templateData } as MessageTemplate : t
+        )
+      );
+      toast.success('Template updated successfully');
+    } else {
+      setTemplates([templateData as MessageTemplate, ...templates]);
+      toast.success('Template submitted for approval');
+    }
   };
 
   const renderWizardStep = () => {
@@ -306,20 +351,32 @@ const CampaignBuilder = () => {
             </TabsContent>
 
             <TabsContent value="templates" className="mt-0">
+              <div className="flex justify-end mb-4">
+                <Button onClick={handleCreateTemplate}>
+                  <Plus className="mr-2 h-4 w-4" /> Create Template
+                </Button>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredTemplates.map((template) => (
                   <TemplateCard
                     key={template.id}
                     template={template}
-                    onEdit={(t) => toast.info(`Editing ${t.name}`)}
-                    onDuplicate={(t) => toast.info(`Duplicating ${t.name}`)}
-                    onDelete={(t) => toast.info(`Deleting ${t.name}`)}
+                    onEdit={handleEditTemplate}
+                    onDuplicate={handleDuplicateTemplate}
+                    onDelete={handleDeleteTemplate}
                   />
                 ))}
               </div>
             </TabsContent>
           </div>
         </Tabs>
+
+        <TemplateEditor
+          open={isTemplateEditorOpen}
+          onOpenChange={setIsTemplateEditorOpen}
+          template={editingTemplate}
+          onSave={handleSaveTemplate}
+        />
       </div>
     </DashboardLayout>
   );
