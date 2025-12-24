@@ -15,6 +15,8 @@ import FlowBuilder from "./pages/FlowBuilder";
 import AIAgents from "./pages/AIAgents";
 import CampaignBuilder from "./pages/CampaignBuilder";
 import CRMLeads from "./pages/CRMLeads";
+import Contacts from "./pages/Contacts";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +39,8 @@ const App = () => (
               <Route path="/dashboard/ai-agents" element={<AIAgents />} />
               <Route path="/dashboard/campaigns" element={<CampaignBuilder />} />
               <Route path="/dashboard/crm" element={<CRMLeads />} />
+              <Route path="/dashboard/contacts" element={<Contacts />} />
+              <Route path="/dashboard/settings" element={<Settings />} />
               <Route path="/admin" element={<AdminDashboard />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
