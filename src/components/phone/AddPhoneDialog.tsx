@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Phone, Loader2, ChevronDown, Check } from "lucide-react";
+import { Phone, Loader2, ChevronDown, Check, AlertCircle } from "lucide-react";
 import {
   Command,
   CommandEmpty,
@@ -33,55 +33,76 @@ interface AddPhoneDialogProps {
 }
 
 const countries = [
-  { code: "US", name: "United States", dialCode: "+1", flag: "🇺🇸" },
-  { code: "GB", name: "United Kingdom", dialCode: "+44", flag: "🇬🇧" },
-  { code: "CA", name: "Canada", dialCode: "+1", flag: "🇨🇦" },
-  { code: "AU", name: "Australia", dialCode: "+61", flag: "🇦🇺" },
-  { code: "DE", name: "Germany", dialCode: "+49", flag: "🇩🇪" },
-  { code: "FR", name: "France", dialCode: "+33", flag: "🇫🇷" },
-  { code: "IT", name: "Italy", dialCode: "+39", flag: "🇮🇹" },
-  { code: "ES", name: "Spain", dialCode: "+34", flag: "🇪🇸" },
-  { code: "PT", name: "Portugal", dialCode: "+351", flag: "🇵🇹" },
-  { code: "NL", name: "Netherlands", dialCode: "+31", flag: "🇳🇱" },
-  { code: "BE", name: "Belgium", dialCode: "+32", flag: "🇧🇪" },
-  { code: "CH", name: "Switzerland", dialCode: "+41", flag: "🇨🇭" },
-  { code: "AT", name: "Austria", dialCode: "+43", flag: "🇦🇹" },
-  { code: "SE", name: "Sweden", dialCode: "+46", flag: "🇸🇪" },
-  { code: "NO", name: "Norway", dialCode: "+47", flag: "🇳🇴" },
-  { code: "DK", name: "Denmark", dialCode: "+45", flag: "🇩🇰" },
-  { code: "FI", name: "Finland", dialCode: "+358", flag: "🇫🇮" },
-  { code: "IE", name: "Ireland", dialCode: "+353", flag: "🇮🇪" },
-  { code: "PL", name: "Poland", dialCode: "+48", flag: "🇵🇱" },
-  { code: "CZ", name: "Czech Republic", dialCode: "+420", flag: "🇨🇿" },
-  { code: "JP", name: "Japan", dialCode: "+81", flag: "🇯🇵" },
-  { code: "KR", name: "South Korea", dialCode: "+82", flag: "🇰🇷" },
-  { code: "CN", name: "China", dialCode: "+86", flag: "🇨🇳" },
-  { code: "IN", name: "India", dialCode: "+91", flag: "🇮🇳" },
-  { code: "BR", name: "Brazil", dialCode: "+55", flag: "🇧🇷" },
-  { code: "MX", name: "Mexico", dialCode: "+52", flag: "🇲🇽" },
-  { code: "AR", name: "Argentina", dialCode: "+54", flag: "🇦🇷" },
-  { code: "CL", name: "Chile", dialCode: "+56", flag: "🇨🇱" },
-  { code: "CO", name: "Colombia", dialCode: "+57", flag: "🇨🇴" },
-  { code: "ZA", name: "South Africa", dialCode: "+27", flag: "🇿🇦" },
-  { code: "AE", name: "United Arab Emirates", dialCode: "+971", flag: "🇦🇪" },
-  { code: "SA", name: "Saudi Arabia", dialCode: "+966", flag: "🇸🇦" },
-  { code: "SG", name: "Singapore", dialCode: "+65", flag: "🇸🇬" },
-  { code: "HK", name: "Hong Kong", dialCode: "+852", flag: "🇭🇰" },
-  { code: "NZ", name: "New Zealand", dialCode: "+64", flag: "🇳🇿" },
-  { code: "IL", name: "Israel", dialCode: "+972", flag: "🇮🇱" },
-  { code: "RU", name: "Russia", dialCode: "+7", flag: "🇷🇺" },
-  { code: "TR", name: "Turkey", dialCode: "+90", flag: "🇹🇷" },
-  { code: "PH", name: "Philippines", dialCode: "+63", flag: "🇵🇭" },
-  { code: "TH", name: "Thailand", dialCode: "+66", flag: "🇹🇭" },
-  { code: "MY", name: "Malaysia", dialCode: "+60", flag: "🇲🇾" },
-  { code: "ID", name: "Indonesia", dialCode: "+62", flag: "🇮🇩" },
-  { code: "VN", name: "Vietnam", dialCode: "+84", flag: "🇻🇳" },
-  { code: "EG", name: "Egypt", dialCode: "+20", flag: "🇪🇬" },
-  { code: "NG", name: "Nigeria", dialCode: "+234", flag: "🇳🇬" },
-  { code: "KE", name: "Kenya", dialCode: "+254", flag: "🇰🇪" },
-  { code: "PK", name: "Pakistan", dialCode: "+92", flag: "🇵🇰" },
-  { code: "BD", name: "Bangladesh", dialCode: "+880", flag: "🇧🇩" },
+  { code: "US", name: "United States", dialCode: "+1", flag: "🇺🇸", format: "### ### ####", minLength: 10, maxLength: 10 },
+  { code: "GB", name: "United Kingdom", dialCode: "+44", flag: "🇬🇧", format: "#### ######", minLength: 10, maxLength: 11 },
+  { code: "CA", name: "Canada", dialCode: "+1", flag: "🇨🇦", format: "### ### ####", minLength: 10, maxLength: 10 },
+  { code: "AU", name: "Australia", dialCode: "+61", flag: "🇦🇺", format: "### ### ###", minLength: 9, maxLength: 9 },
+  { code: "DE", name: "Germany", dialCode: "+49", flag: "🇩🇪", format: "### #######", minLength: 10, maxLength: 11 },
+  { code: "FR", name: "France", dialCode: "+33", flag: "🇫🇷", format: "# ## ## ## ##", minLength: 9, maxLength: 9 },
+  { code: "IT", name: "Italy", dialCode: "+39", flag: "🇮🇹", format: "### ### ####", minLength: 9, maxLength: 10 },
+  { code: "ES", name: "Spain", dialCode: "+34", flag: "🇪🇸", format: "### ### ###", minLength: 9, maxLength: 9 },
+  { code: "PT", name: "Portugal", dialCode: "+351", flag: "🇵🇹", format: "### ### ###", minLength: 9, maxLength: 9 },
+  { code: "NL", name: "Netherlands", dialCode: "+31", flag: "🇳🇱", format: "## ### ####", minLength: 9, maxLength: 9 },
+  { code: "BE", name: "Belgium", dialCode: "+32", flag: "🇧🇪", format: "### ## ## ##", minLength: 9, maxLength: 9 },
+  { code: "CH", name: "Switzerland", dialCode: "+41", flag: "🇨🇭", format: "## ### ## ##", minLength: 9, maxLength: 9 },
+  { code: "AT", name: "Austria", dialCode: "+43", flag: "🇦🇹", format: "### #######", minLength: 10, maxLength: 11 },
+  { code: "SE", name: "Sweden", dialCode: "+46", flag: "🇸🇪", format: "## ### ## ##", minLength: 9, maxLength: 9 },
+  { code: "NO", name: "Norway", dialCode: "+47", flag: "🇳🇴", format: "### ## ###", minLength: 8, maxLength: 8 },
+  { code: "DK", name: "Denmark", dialCode: "+45", flag: "🇩🇰", format: "## ## ## ##", minLength: 8, maxLength: 8 },
+  { code: "FI", name: "Finland", dialCode: "+358", flag: "🇫🇮", format: "## ### ####", minLength: 9, maxLength: 10 },
+  { code: "IE", name: "Ireland", dialCode: "+353", flag: "🇮🇪", format: "## ### ####", minLength: 9, maxLength: 9 },
+  { code: "PL", name: "Poland", dialCode: "+48", flag: "🇵🇱", format: "### ### ###", minLength: 9, maxLength: 9 },
+  { code: "CZ", name: "Czech Republic", dialCode: "+420", flag: "🇨🇿", format: "### ### ###", minLength: 9, maxLength: 9 },
+  { code: "JP", name: "Japan", dialCode: "+81", flag: "🇯🇵", format: "## #### ####", minLength: 10, maxLength: 11 },
+  { code: "KR", name: "South Korea", dialCode: "+82", flag: "🇰🇷", format: "## #### ####", minLength: 10, maxLength: 11 },
+  { code: "CN", name: "China", dialCode: "+86", flag: "🇨🇳", format: "### #### ####", minLength: 11, maxLength: 11 },
+  { code: "IN", name: "India", dialCode: "+91", flag: "🇮🇳", format: "##### #####", minLength: 10, maxLength: 10 },
+  { code: "BR", name: "Brazil", dialCode: "+55", flag: "🇧🇷", format: "## ##### ####", minLength: 11, maxLength: 11 },
+  { code: "MX", name: "Mexico", dialCode: "+52", flag: "🇲🇽", format: "## #### ####", minLength: 10, maxLength: 10 },
+  { code: "AR", name: "Argentina", dialCode: "+54", flag: "🇦🇷", format: "## #### ####", minLength: 10, maxLength: 10 },
+  { code: "CL", name: "Chile", dialCode: "+56", flag: "🇨🇱", format: "# #### ####", minLength: 9, maxLength: 9 },
+  { code: "CO", name: "Colombia", dialCode: "+57", flag: "🇨🇴", format: "### ### ####", minLength: 10, maxLength: 10 },
+  { code: "ZA", name: "South Africa", dialCode: "+27", flag: "🇿🇦", format: "## ### ####", minLength: 9, maxLength: 9 },
+  { code: "AE", name: "United Arab Emirates", dialCode: "+971", flag: "🇦🇪", format: "## ### ####", minLength: 9, maxLength: 9 },
+  { code: "SA", name: "Saudi Arabia", dialCode: "+966", flag: "🇸🇦", format: "## ### ####", minLength: 9, maxLength: 9 },
+  { code: "SG", name: "Singapore", dialCode: "+65", flag: "🇸🇬", format: "#### ####", minLength: 8, maxLength: 8 },
+  { code: "HK", name: "Hong Kong", dialCode: "+852", flag: "🇭🇰", format: "#### ####", minLength: 8, maxLength: 8 },
+  { code: "NZ", name: "New Zealand", dialCode: "+64", flag: "🇳🇿", format: "## ### ####", minLength: 9, maxLength: 10 },
+  { code: "IL", name: "Israel", dialCode: "+972", flag: "🇮🇱", format: "## ### ####", minLength: 9, maxLength: 9 },
+  { code: "RU", name: "Russia", dialCode: "+7", flag: "🇷🇺", format: "### ### ## ##", minLength: 10, maxLength: 10 },
+  { code: "TR", name: "Turkey", dialCode: "+90", flag: "🇹🇷", format: "### ### ####", minLength: 10, maxLength: 10 },
+  { code: "PH", name: "Philippines", dialCode: "+63", flag: "🇵🇭", format: "### ### ####", minLength: 10, maxLength: 10 },
+  { code: "TH", name: "Thailand", dialCode: "+66", flag: "🇹🇭", format: "## ### ####", minLength: 9, maxLength: 9 },
+  { code: "MY", name: "Malaysia", dialCode: "+60", flag: "🇲🇾", format: "## ### ####", minLength: 9, maxLength: 10 },
+  { code: "ID", name: "Indonesia", dialCode: "+62", flag: "🇮🇩", format: "### #### ####", minLength: 10, maxLength: 12 },
+  { code: "VN", name: "Vietnam", dialCode: "+84", flag: "🇻🇳", format: "### ### ####", minLength: 9, maxLength: 10 },
+  { code: "EG", name: "Egypt", dialCode: "+20", flag: "🇪🇬", format: "### ### ####", minLength: 10, maxLength: 10 },
+  { code: "NG", name: "Nigeria", dialCode: "+234", flag: "🇳🇬", format: "### ### ####", minLength: 10, maxLength: 10 },
+  { code: "KE", name: "Kenya", dialCode: "+254", flag: "🇰🇪", format: "### ### ###", minLength: 9, maxLength: 9 },
+  { code: "PK", name: "Pakistan", dialCode: "+92", flag: "🇵🇰", format: "### ### ####", minLength: 10, maxLength: 10 },
+  { code: "BD", name: "Bangladesh", dialCode: "+880", flag: "🇧🇩", format: "#### ######", minLength: 10, maxLength: 10 },
 ];
+
+// Format phone number based on country format pattern
+const formatPhoneNumber = (value: string, format: string): string => {
+  const digits = value.replace(/\D/g, '');
+  let result = '';
+  let digitIndex = 0;
+  
+  for (let i = 0; i < format.length && digitIndex < digits.length; i++) {
+    if (format[i] === '#') {
+      result += digits[digitIndex];
+      digitIndex++;
+    } else {
+      result += format[i];
+    }
+  }
+  
+  return result;
+};
+
+// Get raw digits from formatted phone number
+const getDigits = (value: string): string => value.replace(/\D/g, '');
 
 export function AddPhoneDialog({ open, onOpenChange, onAdd }: AddPhoneDialogProps) {
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -89,10 +110,54 @@ export function AddPhoneDialog({ open, onOpenChange, onAdd }: AddPhoneDialogProp
   const [loading, setLoading] = useState(false);
   const [countryOpen, setCountryOpen] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState(countries[0]);
+  const [touched, setTouched] = useState({ phone: false, label: false });
+
+  const digits = useMemo(() => getDigits(phoneNumber), [phoneNumber]);
+  
+  const validation = useMemo(() => {
+    const errors: { phone?: string; label?: string } = {};
+    
+    if (touched.phone) {
+      if (!digits) {
+        errors.phone = "Phone number is required";
+      } else if (digits.length < selectedCountry.minLength) {
+        errors.phone = `Phone number must be at least ${selectedCountry.minLength} digits`;
+      } else if (digits.length > selectedCountry.maxLength) {
+        errors.phone = `Phone number must be at most ${selectedCountry.maxLength} digits`;
+      }
+    }
+    
+    if (touched.label && !label.trim()) {
+      errors.label = "Label is required";
+    }
+    
+    return errors;
+  }, [digits, label, selectedCountry, touched]);
+
+  const isValid = useMemo(() => {
+    return (
+      digits.length >= selectedCountry.minLength &&
+      digits.length <= selectedCountry.maxLength &&
+      label.trim().length > 0
+    );
+  }, [digits, selectedCountry, label]);
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    const newDigits = getDigits(input);
+    
+    // Limit to max length
+    if (newDigits.length <= selectedCountry.maxLength) {
+      const formatted = formatPhoneNumber(newDigits, selectedCountry.format);
+      setPhoneNumber(formatted);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phoneNumber.trim() || !label.trim()) return;
+    setTouched({ phone: true, label: true });
+    
+    if (!isValid) return;
 
     const fullNumber = `${selectedCountry.dialCode} ${phoneNumber.trim()}`;
     
@@ -102,6 +167,7 @@ export function AddPhoneDialog({ open, onOpenChange, onAdd }: AddPhoneDialogProp
       setPhoneNumber("");
       setLabel("");
       setSelectedCountry(countries[0]);
+      setTouched({ phone: false, label: false });
       onOpenChange(false);
     } catch (error) {
       // Error handled in hook
@@ -178,15 +244,31 @@ export function AddPhoneDialog({ open, onOpenChange, onAdd }: AddPhoneDialogProp
                     </Command>
                   </PopoverContent>
                 </Popover>
-                <Input
-                  id="phone"
-                  placeholder="123 456 7890"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  disabled={loading}
-                  className="flex-1"
-                />
+                <div className="flex-1 space-y-1">
+                  <Input
+                    id="phone"
+                    placeholder={selectedCountry.format.replace(/#/g, '0')}
+                    value={phoneNumber}
+                    onChange={handlePhoneChange}
+                    onBlur={() => setTouched(prev => ({ ...prev, phone: true }))}
+                    disabled={loading}
+                    className={cn(
+                      validation.phone && "border-destructive focus-visible:ring-destructive"
+                    )}
+                  />
+                </div>
               </div>
+              {validation.phone && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {validation.phone}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {digits.length}/{selectedCountry.minLength === selectedCountry.maxLength 
+                  ? selectedCountry.minLength 
+                  : `${selectedCountry.minLength}-${selectedCountry.maxLength}`} digits
+              </p>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="label">Label</Label>
@@ -195,8 +277,18 @@ export function AddPhoneDialog({ open, onOpenChange, onAdd }: AddPhoneDialogProp
                 placeholder="e.g., Business, Support, Sales"
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
+                onBlur={() => setTouched(prev => ({ ...prev, label: true }))}
                 disabled={loading}
+                className={cn(
+                  validation.label && "border-destructive focus-visible:ring-destructive"
+                )}
               />
+              {validation.label && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {validation.label}
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>
@@ -208,7 +300,7 @@ export function AddPhoneDialog({ open, onOpenChange, onAdd }: AddPhoneDialogProp
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading || !phoneNumber.trim() || !label.trim()}>
+            <Button type="submit" disabled={loading || !isValid}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
