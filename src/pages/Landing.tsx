@@ -1,6 +1,7 @@
 import Navbar from "@/components/landing/Navbar";
 import Hero from "@/components/landing/Hero";
 import Features from "@/components/landing/Features";
+import Integrations from "@/components/landing/Integrations";
 import Pricing from "@/components/landing/Pricing";
 import Footer from "@/components/landing/Footer";
 import { Helmet } from "react-helmet-async";
@@ -21,6 +22,7 @@ const Landing = () => {
         <Navbar />
         <Hero />
         <Features />
+        <Integrations />
         <Pricing />
         <Footer />
       </div>
