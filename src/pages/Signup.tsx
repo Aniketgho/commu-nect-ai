@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Mail, Lock, User, ArrowRight, Eye, EyeOff, Building, Loader2 } from "lucide-react";
+import { MessageSquare, Mail, Lock, User, ArrowRight, Eye, EyeOff, Building, Loader2, KeyRound } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { z } from "zod";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -13,20 +14,28 @@ const signupSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
+const emailSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+});
+
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isOtpLoading, setIsOtpLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     company: "",
     email: "",
     password: "",
   });
+  const [otp, setOtp] = useState("");
   const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string }>({});
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [authMode, setAuthMode] = useState<"password" | "otp">("password");
+  const [otpSent, setOtpSent] = useState(false);
 
-  const { signUp, signInWithGoogle, user, loading } = useAuth();
+  const { signUp, signInWithGoogle, signInWithOtp, verifyOtp, user, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -69,6 +78,52 @@ const Signup = () => {
       } else {
         toast.error(error.message);
       }
+      return;
+    }
+
+    toast.success("Account created successfully!");
+    navigate("/dashboard");
+  };
+
+  const handleSendOtp = async () => {
+    setErrors({});
+    
+    if (!agreedToTerms) {
+      toast.error("Please agree to the Terms of Service and Privacy Policy");
+      return;
+    }
+
+    const validation = emailSchema.safeParse({ email: formData.email });
+    if (!validation.success) {
+      setErrors({ email: validation.error.errors[0].message });
+      return;
+    }
+
+    setIsOtpLoading(true);
+    const { error } = await signInWithOtp(formData.email);
+    setIsOtpLoading(false);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setOtpSent(true);
+    toast.success("Check your email for the verification code");
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otp.length !== 6) {
+      toast.error("Please enter the complete 6-digit code");
+      return;
+    }
+
+    setIsOtpLoading(true);
+    const { error } = await verifyOtp(formData.email, otp);
+    setIsOtpLoading(false);
+
+    if (error) {
+      toast.error("Invalid or expired code. Please try again.");
       return;
     }
 
@@ -196,122 +251,259 @@ const Signup = () => {
             </div>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          {/* Auth Mode Toggle */}
+          <div className="flex gap-2 p-1 bg-muted rounded-lg">
+            <button
+              type="button"
+              onClick={() => { setAuthMode("password"); setOtpSent(false); setOtp(""); }}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                authMode === "password" 
+                  ? "bg-background text-foreground shadow-sm" 
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Lock className="h-4 w-4 inline mr-2" />
+              Password
+            </button>
+            <button
+              type="button"
+              onClick={() => { setAuthMode("otp"); setOtpSent(false); setOtp(""); }}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                authMode === "otp" 
+                  ? "bg-background text-foreground shadow-sm" 
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <KeyRound className="h-4 w-4 inline mr-2" />
+              Email OTP
+            </button>
+          </div>
+
+          {/* Password Form */}
+          {authMode === "password" && (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
+                    Full name
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <input
+                      id="name"
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="John Doe"
+                      className={`w-full pl-11 pr-4 py-3 bg-muted rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 border ${errors.name ? 'border-destructive' : 'border-border'}`}
+                    />
+                  </div>
+                  {errors.name && <p className="text-sm text-destructive mt-1">{errors.name}</p>}
+                </div>
+
+                <div>
+                  <label htmlFor="company" className="block text-sm font-medium text-foreground mb-2">
+                    Company
+                  </label>
+                  <div className="relative">
+                    <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <input
+                      id="company"
+                      type="text"
+                      value={formData.company}
+                      onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                      placeholder="Acme Inc"
+                      className="w-full pl-11 pr-4 py-3 bg-muted rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 border border-border"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
-                  Full name
+                <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
+                  Work email
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <input
-                    id="name"
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="John Doe"
-                    className={`w-full pl-11 pr-4 py-3 bg-muted rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 border ${errors.name ? 'border-destructive' : 'border-border'}`}
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="you@company.com"
+                    className={`w-full pl-11 pr-4 py-3 bg-muted rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 border ${errors.email ? 'border-destructive' : 'border-border'}`}
                   />
                 </div>
-                {errors.name && <p className="text-sm text-destructive mt-1">{errors.name}</p>}
+                {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
               </div>
 
               <div>
-                <label htmlFor="company" className="block text-sm font-medium text-foreground mb-2">
-                  Company
+                <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
+                  Password
                 </label>
                 <div className="relative">
-                  <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <input
-                    id="company"
-                    type="text"
-                    value={formData.company}
-                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    placeholder="Acme Inc"
-                    className="w-full pl-11 pr-4 py-3 bg-muted rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 border border-border"
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="Min. 6 characters"
+                    className={`w-full pl-11 pr-12 py-3 bg-muted rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 border ${errors.password ? 'border-destructive' : 'border-border'}`}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
                 </div>
+                {errors.password && <p className="text-sm text-destructive mt-1">{errors.password}</p>}
               </div>
-            </div>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-                Work email
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <div className="flex items-start gap-3">
                 <input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="you@company.com"
-                  className={`w-full pl-11 pr-4 py-3 bg-muted rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 border ${errors.email ? 'border-destructive' : 'border-border'}`}
+                  type="checkbox"
+                  id="terms"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-border bg-muted text-primary focus:ring-primary/50"
                 />
+                <label htmlFor="terms" className="text-sm text-muted-foreground">
+                  I agree to the{" "}
+                  <Link to="/terms" className="text-primary hover:underline">
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link to="/privacy" className="text-primary hover:underline">
+                    Privacy Policy
+                  </Link>
+                </label>
               </div>
-              {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
-            </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="Min. 6 characters"
-                  className={`w-full pl-11 pr-12 py-3 bg-muted rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 border ${errors.password ? 'border-destructive' : 'border-border'}`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
-              </div>
-              {errors.password && <p className="text-sm text-destructive mt-1">{errors.password}</p>}
-            </div>
+              <Button variant="hero" className="w-full" type="submit" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Creating account...
+                  </>
+                ) : (
+                  <>
+                    Create account
+                    <ArrowRight className="h-5 w-5" />
+                  </>
+                )}
+              </Button>
+            </form>
+          )}
 
-            <div className="flex items-start gap-3">
-              <input
-                type="checkbox"
-                id="terms"
-                checked={agreedToTerms}
-                onChange={(e) => setAgreedToTerms(e.target.checked)}
-                className="mt-1 h-4 w-4 rounded border-border bg-muted text-primary focus:ring-primary/50"
-              />
-              <label htmlFor="terms" className="text-sm text-muted-foreground">
-                I agree to the{" "}
-                <Link to="/terms" className="text-primary hover:underline">
-                  Terms of Service
-                </Link>{" "}
-                and{" "}
-                <Link to="/privacy" className="text-primary hover:underline">
-                  Privacy Policy
-                </Link>
-              </label>
-            </div>
-
-            <Button variant="hero" className="w-full" type="submit" disabled={isLoading}>
-              {isLoading ? (
+          {/* OTP Form */}
+          {authMode === "otp" && (
+            <div className="space-y-4">
+              {!otpSent ? (
                 <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Creating account...
+                  <div>
+                    <label htmlFor="otp-email" className="block text-sm font-medium text-foreground mb-2">
+                      Work email
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      <input
+                        id="otp-email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        placeholder="you@company.com"
+                        className={`w-full pl-11 pr-4 py-3 bg-muted rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 border ${errors.email ? 'border-destructive' : 'border-border'}`}
+                      />
+                    </div>
+                    {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      id="terms-otp"
+                      checked={agreedToTerms}
+                      onChange={(e) => setAgreedToTerms(e.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-border bg-muted text-primary focus:ring-primary/50"
+                    />
+                    <label htmlFor="terms-otp" className="text-sm text-muted-foreground">
+                      I agree to the{" "}
+                      <Link to="/terms" className="text-primary hover:underline">
+                        Terms of Service
+                      </Link>{" "}
+                      and{" "}
+                      <Link to="/privacy" className="text-primary hover:underline">
+                        Privacy Policy
+                      </Link>
+                    </label>
+                  </div>
+
+                  <Button variant="hero" className="w-full" onClick={handleSendOtp} disabled={isOtpLoading}>
+                    {isOtpLoading ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        Sending code...
+                      </>
+                    ) : (
+                      <>
+                        Send verification code
+                        <Mail className="h-5 w-5" />
+                      </>
+                    )}
+                  </Button>
                 </>
               ) : (
                 <>
-                  Create account
-                  <ArrowRight className="h-5 w-5" />
+                  <div className="text-center">
+                    <p className="text-muted-foreground mb-4">
+                      We sent a 6-digit code to <span className="text-foreground font-medium">{formData.email}</span>
+                    </p>
+                    <div className="flex justify-center mb-4">
+                      <InputOTP
+                        value={otp}
+                        onChange={setOtp}
+                        maxLength={6}
+                      >
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                          <InputOTPSlot index={3} />
+                          <InputOTPSlot index={4} />
+                          <InputOTPSlot index={5} />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </div>
+                  </div>
+
+                  <Button variant="hero" className="w-full" onClick={handleVerifyOtp} disabled={isOtpLoading || otp.length !== 6}>
+                    {isOtpLoading ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        Verifying...
+                      </>
+                    ) : (
+                      <>
+                        Verify & Create account
+                        <ArrowRight className="h-5 w-5" />
+                      </>
+                    )}
+                  </Button>
+
+                  <button
+                    type="button"
+                    onClick={() => { setOtpSent(false); setOtp(""); }}
+                    className="w-full text-center text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    Didn't receive the code? <span className="text-primary">Send again</span>
+                  </button>
                 </>
               )}
-            </Button>
-          </form>
+            </div>
+          )}
 
           {/* Login Link */}
           <p className="text-center text-muted-foreground">
