@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import WhatsAppIntegration from "@/components/settings/WhatsAppIntegration";
 import { WhatsAppConfig } from "@/types/contacts";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Settings as SettingsIcon, 
   MessageSquare, 
@@ -29,20 +30,28 @@ import {
   Save,
   Loader2,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Upload,
+  Camera
 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const Settings = () => {
+  const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [whatsAppConfig, setWhatsAppConfig] = useState<WhatsAppConfig | undefined>();
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   
   // Profile settings
   const [profile, setProfile] = useState({
-    name: 'John Doe',
-    email: 'john@example.com',
+    name: user?.user_metadata?.name || 'John Doe',
+    email: user?.email || 'john@example.com',
     phone: '+1234567890',
-    company: 'Acme Inc',
+    company: user?.user_metadata?.company || 'Acme Inc',
     timezone: 'UTC-5',
     language: 'English',
   });
@@ -71,6 +80,63 @@ const Settings = () => {
 
   const handleDisconnectWhatsApp = () => {
     setWhatsAppConfig(undefined);
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (2MB max)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image must be less than 2MB');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/avatar.${fileExt}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      setAvatarUrl(`${publicUrl}?t=${Date.now()}`);
+      toast.success('Avatar updated successfully!');
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      toast.error('Failed to upload avatar');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const getInitials = () => {
+    return profile.name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   const handleSaveProfile = async () => {
@@ -144,11 +210,51 @@ const Settings = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center gap-6">
-                  <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary text-2xl font-bold">
-                    JD
+                  <div className="relative group">
+                    <Avatar className="w-20 h-20 border-2 border-border">
+                      <AvatarImage src={avatarUrl || undefined} alt={profile.name} />
+                      <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
+                        {getInitials()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <button
+                      onClick={handleAvatarClick}
+                      disabled={isUploadingAvatar}
+                      className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    >
+                      {isUploadingAvatar ? (
+                        <Loader2 className="h-6 w-6 text-white animate-spin" />
+                      ) : (
+                        <Camera className="h-6 w-6 text-white" />
+                      )}
+                    </button>
                   </div>
                   <div>
-                    <Button variant="outline" size="sm">Change Avatar</Button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg,image/webp"
+                      onChange={handleAvatarChange}
+                      className="hidden"
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleAvatarClick}
+                      disabled={isUploadingAvatar}
+                    >
+                      {isUploadingAvatar ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4 mr-2" />
+                          Change Avatar
+                        </>
+                      )}
+                    </Button>
                     <p className="text-xs text-muted-foreground mt-1">JPG, PNG max 2MB</p>
                   </div>
                 </div>
