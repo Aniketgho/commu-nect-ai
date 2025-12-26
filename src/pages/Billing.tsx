@@ -3,6 +3,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import AddCardDialog from "@/components/billing/AddCardDialog";
 import ChangePlanDialog from "@/components/billing/ChangePlanDialog";
 import CancelSubscriptionDialog from "@/components/billing/CancelSubscriptionDialog";
+import RazorpayPaymentDialog from "@/components/billing/RazorpayPaymentDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +36,8 @@ import {
   Star,
   Plus,
   Edit2,
-  Loader2
+  Loader2,
+  IndianRupee
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -55,6 +57,8 @@ const Billing = () => {
   const [showChangePlanDialog, setShowChangePlanDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showAddressDialog, setShowAddressDialog] = useState(false);
+  const [showRazorpayDialog, setShowRazorpayDialog] = useState(false);
+  const [selectedPlanForPayment, setSelectedPlanForPayment] = useState<typeof plans[0] | null>(null);
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
 
   const [cards, setCards] = useState<PaymentCard[]>([
@@ -416,13 +420,26 @@ const Billing = () => {
           <Card className="border-border">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-foreground">
-                  <CreditCard className="h-5 w-5 text-primary" />
-                  Payment Methods
-                </CardTitle>
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <CreditCard className="h-5 w-5 text-primary" />
+                Payment Methods
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="gap-1 border-blue-500 text-blue-500 hover:bg-blue-500/10"
+                  onClick={() => {
+                    setSelectedPlanForPayment(plans.find(p => p.id === currentPlanId) || null);
+                    setShowRazorpayDialog(true);
+                  }}
+                >
+                  <IndianRupee className="h-4 w-4" /> Razorpay
+                </Button>
                 <Button size="sm" onClick={() => setShowAddCardDialog(true)}>
                   <Plus className="h-4 w-4 mr-1" /> Add Card
                 </Button>
+              </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -596,6 +613,18 @@ const Billing = () => {
         planName={currentPlan?.name || ''}
         billingEndDate="January 24, 2025"
         onCancel={handleCancelSubscription}
+      />
+
+      <RazorpayPaymentDialog
+        open={showRazorpayDialog}
+        onOpenChange={setShowRazorpayDialog}
+        plan={selectedPlanForPayment}
+        onPaymentSuccess={() => {
+          if (selectedPlanForPayment) {
+            setCurrentPlanId(selectedPlanForPayment.id);
+            setIsCancelled(false);
+          }
+        }}
       />
 
       {/* Address Dialog */}
